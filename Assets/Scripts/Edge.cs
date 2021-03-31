@@ -11,35 +11,30 @@ public class Edge
     /// </summary>
     public bool IsCliff {
         get {
-            Vector4 indicies = direction.GetVertexIndices();
-            return  cells[0] != null && cells [1] != null 
-                && (cells[0].corners[(int)indicies.x].Elevation != cells[1].corners[(int)indicies.z].Elevation
-                 || cells[0].corners[(int)indicies.y].Elevation != cells[1].corners[(int)indicies.w].Elevation);
+            return cells[0] != null && cells[1] != null
+                && (Corners[0].Elevation != Corners[2].Elevation
+                 || Corners[1].Elevation != Corners[3].Elevation);
         }
     }
 
-    public Vector4 Elevations {
+    public TriCell.CellCorner[] Corners {
         get {
-            Vector4 indicies = direction.GetVertexIndices();
-            return new Vector4(cells[0].corners[(int)indicies.x].Elevation,
-                               cells[0].corners[(int)indicies.y].Elevation, 
-                               cells[1].corners[(int)indicies.z].Elevation, 
-                               cells[1].corners[(int)indicies.w].Elevation);
+            if (corners == null) {
+                corners = new TriCell.CellCorner[4];
+                for(int i = 0; i < vertexIndices.Length; i++) {
+                    corners[i] = cells[i / 2].corners[vertexIndices[i]];
+                }
+            }
+            return corners;
         }
     }
 
-    public Color[] Colors {
-        get {
-            Vector4 indicies = direction.GetVertexIndices();
-            return new Color[] {cells[0].corners[(int)indicies.x].Color,
-                                cells[0].corners[(int)indicies.y].Color,
-                                cells[1].corners[(int)indicies.z].Color,
-                                cells[1].corners[(int)indicies.w].Color };
-        }
-    }
+    private TriCell.CellCorner[] corners;
+    private int[] vertexIndices;
 
     public Edge(EdgeOrientation direction, TriCell topCell, TriCell bottomCell) {
         this.direction = direction;
+        vertexIndices = direction.GetVertexIndices();
         cells = new TriCell[2];
         cells[0] = topCell;
         cells[1] = bottomCell;

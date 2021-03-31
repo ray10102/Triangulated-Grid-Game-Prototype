@@ -67,46 +67,44 @@ public class GridMesh : MonoBehaviour
 			if (edge != null && edge.IsCliff) {
 				Vector3 corner = GridMetrics.GetCorner((EdgeDirection)direction);
 				// Because we are looking at only E edges, xz always corresponds to center, yw to corner
-				Vector4 elevations = edge.Elevations;
-				Color[] colors = edge.Colors;
-				if (elevations.x != elevations.z) {
-					if (elevations.y != elevations.w) { // Both vertices different
+				if (edge.Corners[0].Elevation != edge.Corners[2].Elevation) {
+					if (edge.Corners[1].Elevation != edge.Corners[3].Elevation) { // Both vertices different
 						// Vertex order depends on which side is lower.
 						// TODO update this to use existing vertices instead of adding new ones
 						// fix EW edges
-						if (elevations.x < elevations.z) {
+						if (edge.Corners[0].Elevation < edge.Corners[2].Elevation) {
 							// Top tri lower
-							AddTriangle(center + Util.ElevationToVec3((int)elevations.x),
-								center + corner + Util.ElevationToVec3((int)elevations.y),
-								center + Util.ElevationToVec3((int)elevations.z));
-							AddTriangleColor(colors[0], colors[1], colors[2]);
-							AddTriangle(center + corner + Util.ElevationToVec3((int)elevations.y),
-								center + corner + Util.ElevationToVec3((int)elevations.w),
-								center + Util.ElevationToVec3((int)elevations.z));
-							AddTriangleColor(colors[1], colors[3], colors[2]);
+							AddTriangle(center + Util.ElevationToVec3(edge.Corners[0].Elevation),
+								center + corner + Util.ElevationToVec3(edge.Corners[1].Elevation),
+								center + Util.ElevationToVec3(edge.Corners[2].Elevation));
+							AddTriangleColor(edge.Corners[0].Color, edge.Corners[1].Color, edge.Corners[2].Color);
+							AddTriangle(center + corner + Util.ElevationToVec3((int)edge.Corners[1].Elevation),
+								center + corner + Util.ElevationToVec3((int)edge.Corners[3].Elevation),
+								center + Util.ElevationToVec3((int)edge.Corners[2].Elevation));
+							AddTriangleColor(edge.Corners[1].Color, edge.Corners[3].Color, edge.Corners[2].Color);
 						} else {
 							// Top tri higher
-							AddTriangle(center + corner + Util.ElevationToVec3((int)elevations.y),
-								center + Util.ElevationToVec3((int)elevations.z),
-								center + Util.ElevationToVec3((int)elevations.x));
-							AddTriangleColor(colors[1], colors[2], colors[0]);
-							AddTriangle(center + Util.ElevationToVec3((int)elevations.z),
-								center + corner + Util.ElevationToVec3((int)elevations.y),
-								center + corner + Util.ElevationToVec3((int)elevations.w));
-							AddTriangleColor(colors[2], colors[1], colors[3]);
+							AddTriangle(center + corner + Util.ElevationToVec3((int)edge.Corners[1].Elevation),
+								center + Util.ElevationToVec3((int)edge.Corners[2].Elevation),
+								center + Util.ElevationToVec3((int)edge.Corners[0].Elevation));
+							AddTriangleColor(edge.Corners[1].Color, edge.Corners[2].Color, edge.Corners[0].Color);
+							AddTriangle(center + Util.ElevationToVec3((int)edge.Corners[2].Elevation),
+								center + corner + Util.ElevationToVec3((int)edge.Corners[1].Elevation),
+								center + corner + Util.ElevationToVec3((int)edge.Corners[3].Elevation));
+							AddTriangleColor(edge.Corners[2].Color, edge.Corners[1].Color, edge.Corners[3].Color);
 						}
 
 					} else { // Only top vertex different
 						Debug.Log("top vert");
-						AddTriangle(center + Util.ElevationToVec3((int)elevations.x),
-							center + Util.ElevationToVec3((int)elevations.z),
-							corner + Util.ElevationToVec3((int)elevations.y));
+						AddTriangle(center + Util.ElevationToVec3((int)edge.Corners[0].Elevation),
+							center + Util.ElevationToVec3((int)edge.Corners[2].Elevation),
+							corner + Util.ElevationToVec3((int)edge.Corners[1].Elevation));
 					}
-				} else if (elevations.y != elevations.w) { // Only bottom vertex different
+				} else if (edge.Corners[1].Elevation != edge.Corners[3].Elevation) { // Only bottom vertex different
 					Debug.Log("bottom vert");
-					AddTriangle(corner + Util.ElevationToVec3((int)elevations.y),
-							corner + Util.ElevationToVec3((int)elevations.w),
-							center + Util.ElevationToVec3((int)elevations.z));
+					AddTriangle(corner + Util.ElevationToVec3((int)edge.Corners[1].Elevation),
+							corner + Util.ElevationToVec3((int)edge.Corners[3].Elevation),
+							center + Util.ElevationToVec3((int)edge.Corners[2].Elevation));
 				}
 			}
 		}

@@ -23,14 +23,14 @@ public static class EdgeOrientationExtensions
     /// x corresponds to z, y corresponds to w. xy represent the vertex indices of the top cell, while zw represent those of the bottom cell.
     /// Indices are returned in left to right order.
     /// </summary>
-    public static Vector4 GetVertexIndices(this EdgeOrientation direction) {
+    public static int[] GetVertexIndices(this EdgeOrientation direction) {
         switch (direction) {
             case EdgeOrientation.EW:
-                return new Vector4(1, 2, 2, 1);
+                return new int[4] { 1, 2, 2, 1 };
             case EdgeOrientation.NWSE:
-                return new Vector4(1, 0, 0, 1);
+                return new int[4] { 1, 0, 0, 1 };
             case EdgeOrientation.SWNE:
-                return new Vector4(2, 0, 0, 2);
+                return new int[4] { 2, 0, 0, 2 };
             default:
                 throw new ArgumentOutOfRangeException();
         }
@@ -91,6 +91,25 @@ public static class CellDirectionExtensions
                 c1 = CellDirection.NW;
                 c2 = CellDirection.NE;
                 return;
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
+    }
+
+    public static int GetCenterVertIndexForCell(this CellDirection direction) {
+        switch (direction) {
+            case CellDirection.N:
+                return 0;
+            case CellDirection.NE:
+                return 2;
+            case CellDirection.SE:
+                return 1;
+            case CellDirection.S:
+                return 0;
+            case CellDirection.SW:
+                return 2;
+            case CellDirection.NW:
+                return 1;
             default:
                 throw new ArgumentOutOfRangeException();
         }
