@@ -25,6 +25,47 @@ public class TriCell
 		}
 	}
 
+	public Edge GetEdgeFromCorners(int c1, int c2) {
+		if (c1 == c2) {
+			throw new ArgumentException("Corner indicies must be different");
+        }
+		if (c1 > c2) {
+			int temp = c1;
+			c1 = c2;
+			c2 = temp;
+        }
+
+		if (type == TriType.Top) {
+			if (c2 == 1) { // c1 must be 0
+				return point.GetEdge(EdgeDirection.NW);
+			} else if (c1 == 1 && c2 == 2) {
+				Point NE = point.GetNeighbor(EdgeDirection.NE);
+				if (NE != null) {
+					return NE.GetEdge(EdgeDirection.W);
+				}
+				Point NW = point.GetNeighbor(EdgeDirection.NW);
+				if (NW != null) {
+					return NW.GetEdge(EdgeDirection.E);
+				}
+			}
+			return point.GetEdge(EdgeDirection.NE);
+        } else {
+			if (c2 == 1) { // c1 must be 0
+				return point.GetEdge(EdgeDirection.SE);
+			} else if (c1 == 1 && c2 == 2) {
+				Point SE = point.GetNeighbor(EdgeDirection.SE);
+				if (SE != null) {
+					return SE.GetEdge(EdgeDirection.W);
+				}
+				Point SW = point.GetNeighbor(EdgeDirection.SW);
+				if (SW != null) {
+					return SW.GetEdge(EdgeDirection.E);
+				}
+			}
+			return point.GetEdge(EdgeDirection.SW);
+		}
+    }
+
 	// Untested
 	public TriCell GetNeighbor(CellDirection direction) {
 		if ((type == TriType.Top &&
