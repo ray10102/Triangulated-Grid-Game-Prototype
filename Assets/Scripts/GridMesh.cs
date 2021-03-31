@@ -47,15 +47,15 @@ public class GridMesh : MonoBehaviour
         }
 		Vector3 center = point.transform.localPosition;
 		if (point.coordinates.Z < height - 1) {
-			AddTriangle(center + GetElevation(point.GetCell(CellDirection.N).corners[0].Elevation),
-				center + GridMetrics.GetCorner(EdgeDirection.NW) + GetElevation(point.GetCell(CellDirection.N).corners[1].Elevation),
-				center + GridMetrics.GetCorner(EdgeDirection.NE) + GetElevation(point.GetCell(CellDirection.N).corners[2].Elevation));
+			AddTriangle(center + Util.ElevationToVec3(point.GetCell(CellDirection.N).corners[0].Elevation),
+				center + GridMetrics.GetCorner(EdgeDirection.NW) + Util.ElevationToVec3(point.GetCell(CellDirection.N).corners[1].Elevation),
+				center + GridMetrics.GetCorner(EdgeDirection.NE) + Util.ElevationToVec3(point.GetCell(CellDirection.N).corners[2].Elevation));
 			AddTriangleColor(point.GetCell(CellDirection.N));
 		}
 		if (point.coordinates.Z > 0) {
-			AddTriangle(center + GetElevation(point.GetCell(CellDirection.S).corners[0].Elevation),
-				center + GridMetrics.GetCorner(EdgeDirection.SE) + GetElevation(point.GetCell(CellDirection.S).corners[1].Elevation),
-				center + GridMetrics.GetCorner(EdgeDirection.SW) + GetElevation(point.GetCell(CellDirection.S).corners[2].Elevation));
+			AddTriangle(center + Util.ElevationToVec3(point.GetCell(CellDirection.S).corners[0].Elevation),
+				center + GridMetrics.GetCorner(EdgeDirection.SE) + Util.ElevationToVec3(point.GetCell(CellDirection.S).corners[1].Elevation),
+				center + GridMetrics.GetCorner(EdgeDirection.SW) + Util.ElevationToVec3(point.GetCell(CellDirection.S).corners[2].Elevation));
 			AddTriangleColor(point.GetCell(CellDirection.S));
 		}
 
@@ -76,37 +76,37 @@ public class GridMesh : MonoBehaviour
 						// fix EW edges
 						if (elevations.x < elevations.z) {
 							// Top tri lower
-							AddTriangle(center + GetElevation((int)elevations.x),
-								center + corner + GetElevation((int)elevations.y),
-								center + GetElevation((int)elevations.z));
+							AddTriangle(center + Util.ElevationToVec3((int)elevations.x),
+								center + corner + Util.ElevationToVec3((int)elevations.y),
+								center + Util.ElevationToVec3((int)elevations.z));
 							AddTriangleColor(colors[0], colors[1], colors[2]);
-							AddTriangle(center + corner + GetElevation((int)elevations.y),
-								center + corner + GetElevation((int)elevations.w),
-								center + GetElevation((int)elevations.z));
+							AddTriangle(center + corner + Util.ElevationToVec3((int)elevations.y),
+								center + corner + Util.ElevationToVec3((int)elevations.w),
+								center + Util.ElevationToVec3((int)elevations.z));
 							AddTriangleColor(colors[1], colors[3], colors[2]);
 						} else {
 							// Top tri higher
-							AddTriangle(center + corner + GetElevation((int)elevations.y),
-								center + GetElevation((int)elevations.z),
-								center + GetElevation((int)elevations.x));
+							AddTriangle(center + corner + Util.ElevationToVec3((int)elevations.y),
+								center + Util.ElevationToVec3((int)elevations.z),
+								center + Util.ElevationToVec3((int)elevations.x));
 							AddTriangleColor(colors[1], colors[2], colors[0]);
-							AddTriangle(center + GetElevation((int)elevations.z),
-								center + corner + GetElevation((int)elevations.y),
-								center + corner + GetElevation((int)elevations.w));
+							AddTriangle(center + Util.ElevationToVec3((int)elevations.z),
+								center + corner + Util.ElevationToVec3((int)elevations.y),
+								center + corner + Util.ElevationToVec3((int)elevations.w));
 							AddTriangleColor(colors[2], colors[1], colors[3]);
 						}
 
 					} else { // Only top vertex different
 						Debug.Log("top vert");
-						AddTriangle(center + GetElevation((int)elevations.x),
-							center + GetElevation((int)elevations.z),
-							corner + GetElevation((int)elevations.y));
+						AddTriangle(center + Util.ElevationToVec3((int)elevations.x),
+							center + Util.ElevationToVec3((int)elevations.z),
+							corner + Util.ElevationToVec3((int)elevations.y));
 					}
 				} else if (elevations.y != elevations.w) { // Only bottom vertex different
 					Debug.Log("bottom vert");
-					AddTriangle(corner + GetElevation((int)elevations.y),
-							corner + GetElevation((int)elevations.w),
-							center + GetElevation((int)elevations.z));
+					AddTriangle(corner + Util.ElevationToVec3((int)elevations.y),
+							corner + Util.ElevationToVec3((int)elevations.w),
+							center + Util.ElevationToVec3((int)elevations.z));
 				}
 			}
 		}
@@ -132,9 +132,5 @@ public class GridMesh : MonoBehaviour
 		colors.Add(c1);
 		colors.Add(c2);
 		colors.Add(c3);
-	}
-
-	private Vector3 GetElevation(int elevation) {
-		return Vector3.up * elevation * GridMetrics.elevationStep; 
 	}
 }

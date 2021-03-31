@@ -5,6 +5,10 @@ using System;
 
 public static class Util
 {
+    public static Vector3 ElevationToVec3(int elevation) {
+        return Vector3.up * elevation * GridMetrics.elevationStep;
+    }
+
     public static float FindIntercept2D(float slope, Vector2 point) {
         return point.y - slope * point.x;
     }

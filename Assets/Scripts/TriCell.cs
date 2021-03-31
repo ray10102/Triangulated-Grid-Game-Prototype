@@ -7,11 +7,10 @@ using System;
 public class TriCell
 {
     public TriType type;
-	public Point point;
-
-
 	// Counter clockwise corners starting from center
 	public CellCorner[] corners;
+
+	private Point point;
 
 	public AxialCoordinates coordinates {
 		get { return point.coordinates; }
@@ -133,6 +132,12 @@ public class TriCell
                 }
 				color = value;
 				cell.Refresh();
+            }
+        }
+
+		public Vector3 position {
+			get {
+				return cell.GetPoint(index).transform.position + Util.ElevationToVec3(Elevation);
             }
         }
 

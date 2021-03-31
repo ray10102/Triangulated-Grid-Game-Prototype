@@ -40,10 +40,6 @@ public class Grid : MonoBehaviour
 		return points[GetPointIndexFromCoordinate(coordinates)];
 	}
 
-	public Point GetPointFromTri(TriCell cell) {
-		return points[GetPointIndexFromCoordinate(cell.coordinates)];
-	}
-
 	public TriCell GetCellFromPosition(Vector3 position) {
 		Point point = GetPointFromPosition(position);
 		AxialCoordinates vert = point.coordinates;
@@ -120,6 +116,21 @@ public class Grid : MonoBehaviour
 		}
 		return point.GetEdge(direction);
 	}
+
+	public TriCell.CellCorner GetCornerFromPosition(Vector3 position) {
+		TriCell cell = GetCellFromPosition(position);
+		float closestDist = float.MaxValue;
+		int closestCorner = int.MinValue;
+		for(int i = 0; i < 3; i++) {
+			Vector3 cornerPos = cell.corners[i].position;
+			float dist = Vector3.Distance(cornerPos, position);
+			if (dist < closestDist) {
+				closestDist = dist;
+				closestCorner = i;
+            }
+        }
+		return cell.corners[closestCorner];
+    }
 	#endregion
 
 	private void CreateChunks() {
