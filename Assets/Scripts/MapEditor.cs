@@ -122,7 +122,6 @@ public class MapEditor : MonoBehaviour
     }
 
 	void EditTri(TriCell tri) {
-		tri.SetColor(activeColor);
 		tri.SetElevation(activeElevation);
 	}
 
@@ -142,7 +141,7 @@ public class MapEditor : MonoBehaviour
 		hoverLineRenderer.loop = true;
 		hoverLineRenderer.positionCount = 3;
 		for (int i = 0; i < 3; i++) {
-			pointArray[i] = cell.corners[i].position;
+			pointArray[i] = cell.corners[i].Position;
 		}
 		hoverLineRenderer.SetPositions(pointArray);
     }
@@ -169,18 +168,18 @@ public class MapEditor : MonoBehaviour
 			hoverLineRenderer.loop = false;
 			hoverLineRenderer.positionCount = 12;
 			Vector3 center = point.transform.position + Util.ElevationToVec3(minElevation);
-			pointArray[0] = point.GetCell(CellDirection.N).corners[1].position;
-			pointArray[1] = point.GetCell(CellDirection.N).corners[2].position;
-			pointArray[2] = point.GetCell(CellDirection.NE).corners[0].position;
-			pointArray[3] = point.GetCell(CellDirection.NE).corners[1].position;
-			pointArray[4] = point.GetCell(CellDirection.SE).corners[2].position;
-			pointArray[5] = point.GetCell(CellDirection.SE).corners[0].position;
-			pointArray[6] = point.GetCell(CellDirection.S).corners[1].position;
-			pointArray[7] = point.GetCell(CellDirection.S).corners[2].position;
-			pointArray[8] = point.GetCell(CellDirection.SW).corners[0].position;
-			pointArray[9] = point.GetCell(CellDirection.SW).corners[1].position;
-			pointArray[10] = point.GetCell(CellDirection.NW).corners[2].position;
-			pointArray[11] = point.GetCell(CellDirection.NW).corners[0].position;
+			pointArray[0] = point.GetCell(CellDirection.N).corners[1].Position;
+			pointArray[1] = point.GetCell(CellDirection.N).corners[2].Position;
+			pointArray[2] = point.GetCell(CellDirection.NE).corners[0].Position;
+			pointArray[3] = point.GetCell(CellDirection.NE).corners[1].Position;
+			pointArray[4] = point.GetCell(CellDirection.SE).corners[2].Position;
+			pointArray[5] = point.GetCell(CellDirection.SE).corners[0].Position;
+			pointArray[6] = point.GetCell(CellDirection.S).corners[1].Position;
+			pointArray[7] = point.GetCell(CellDirection.S).corners[2].Position;
+			pointArray[8] = point.GetCell(CellDirection.SW).corners[0].Position;
+			pointArray[9] = point.GetCell(CellDirection.SW).corners[1].Position;
+			pointArray[10] = point.GetCell(CellDirection.NW).corners[2].Position;
+			pointArray[11] = point.GetCell(CellDirection.NW).corners[0].Position;
 			for (int i = 0; i < 12; i++) {
 				Vector3 diff = pointArray[i] - center;
 				pointArray[i] = center + diff * 0.2f;
@@ -192,28 +191,28 @@ public class MapEditor : MonoBehaviour
 	private void HoverHex(Point point) {
 		hoverLineRenderer.loop = true;
 		hoverLineRenderer.positionCount = 12;
-		pointArray[0] = point.GetCell(CellDirection.N).corners[1].position;
-		pointArray[1] = point.GetCell(CellDirection.N).corners[2].position;
-		pointArray[2] = point.GetCell(CellDirection.NE).corners[0].position;
-		pointArray[3] = point.GetCell(CellDirection.NE).corners[1].position;
-		pointArray[4] = point.GetCell(CellDirection.SE).corners[2].position;
-		pointArray[5] = point.GetCell(CellDirection.SE).corners[0].position;
-		pointArray[6] = point.GetCell(CellDirection.S).corners[1].position;
-		pointArray[7] = point.GetCell(CellDirection.S).corners[2].position;
-		pointArray[8] = point.GetCell(CellDirection.SW).corners[0].position;
-		pointArray[9] = point.GetCell(CellDirection.SW).corners[1].position;
-		pointArray[10] = point.GetCell(CellDirection.NW).corners[2].position;
-		pointArray[11] = point.GetCell(CellDirection.NW).corners[0].position;
+		pointArray[0] = point.GetCell(CellDirection.N).corners[1].Position;
+		pointArray[1] = point.GetCell(CellDirection.N).corners[2].Position;
+		pointArray[2] = point.GetCell(CellDirection.NE).corners[0].Position;
+		pointArray[3] = point.GetCell(CellDirection.NE).corners[1].Position;
+		pointArray[4] = point.GetCell(CellDirection.SE).corners[2].Position;
+		pointArray[5] = point.GetCell(CellDirection.SE).corners[0].Position;
+		pointArray[6] = point.GetCell(CellDirection.S).corners[1].Position;
+		pointArray[7] = point.GetCell(CellDirection.S).corners[2].Position;
+		pointArray[8] = point.GetCell(CellDirection.SW).corners[0].Position;
+		pointArray[9] = point.GetCell(CellDirection.SW).corners[1].Position;
+		pointArray[10] = point.GetCell(CellDirection.NW).corners[2].Position;
+		pointArray[11] = point.GetCell(CellDirection.NW).corners[0].Position;
 		hoverLineRenderer.SetPositions(pointArray);
 	}
 
 	private void HoverEdge(Edge edge) {
 		hoverLineRenderer.loop = true;
 		hoverLineRenderer.positionCount = 4;
-		pointArray[0] = edge.Corners[0].position;
-		pointArray[1] = edge.Corners[1].position;
-		pointArray[2] = edge.Corners[3].position;
-		pointArray[3] = edge.Corners[2].position;
+		pointArray[0] = edge.Corners[0].Position;
+		pointArray[1] = edge.Corners[1].Position;
+		pointArray[2] = edge.Corners[3].Position;
+		pointArray[3] = edge.Corners[2].Position;
 		hoverLineRenderer.SetPositions(pointArray);
 	}
 

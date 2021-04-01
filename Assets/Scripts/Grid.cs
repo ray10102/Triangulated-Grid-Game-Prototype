@@ -122,7 +122,7 @@ public class Grid : MonoBehaviour
 		float closestDist = float.MaxValue;
 		int closestCorner = int.MinValue;
 		for(int i = 0; i < 3; i++) {
-			Vector3 cornerPos = cell.corners[i].position;
+			Vector3 cornerPos = cell.corners[i].Position;
 			float dist = Vector3.Distance(cornerPos, position);
 			if (dist < closestDist) {
 				closestDist = dist;
@@ -162,10 +162,8 @@ public class Grid : MonoBehaviour
     }
 
 	private void InitPoint(Point point) {
-		point.GetCell(CellDirection.N).SetColor(new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f)));
-		point.GetCell(CellDirection.S).SetColor(new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f)));
-		point.GetCell(CellDirection.N).SetElevation(0);// Random.Range(0, 5));
-		point.GetCell(CellDirection.S).SetElevation(0);// Random.Range(0, 5));
+		point.GetCell(CellDirection.N).SetElevation(0);
+		point.GetCell(CellDirection.S).SetElevation(0);
 	}
 
 	private void CreatePoint(int x, int z, int i) {
@@ -173,8 +171,8 @@ public class Grid : MonoBehaviour
 		point.coordinates = AxialCoordinates.FromOffsetCoordinates(x, z);
 		Vector2 center2D = AxialCoordinates.GetCenterFromAxial(point.coordinates);
 		point.transform.localPosition = new Vector3(center2D.x, 0f, center2D.y);
-		point.SetCell(CellDirection.N, new TriCell(point, TriType.Top));
-		point.SetCell(CellDirection.S, new TriCell(point, TriType.Bottom));
+		point.SetCell(CellDirection.N, new TriCell(point, TriOrientation.Top));
+		point.SetCell(CellDirection.S, new TriCell(point, TriOrientation.Bottom));
 		point.name = "Cell " + point.coordinates.ToString();
 		// Set neighbors and edges
 		if (x > 0) {
