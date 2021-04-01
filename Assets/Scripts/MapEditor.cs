@@ -64,6 +64,91 @@ public class MapEditor : MonoBehaviour
 
 	}
 
+	void HandleClick() {
+		Ray inputRay = Camera.main.ScreenPointToRay(Input.mousePosition);
+		RaycastHit hit;
+		if (Physics.Raycast(inputRay, out hit)) {
+			switch (interactMode) {
+				case InteractMode.Edit:
+					HandleEdit(hit);
+					break;
+				case InteractMode.Inspect:
+					if (selectMode == SelectMode.Edge) {
+						hexGrid.GetEdgeFromPosition(hit.point);
+                    }
+					break;
+			}
+		}
+	}
+
+	#region Edit Handlers
+
+	private void HandleEdit(RaycastHit hit) {
+		switch (selectMode) {
+			case SelectMode.Tri:
+				HandleTriEdit(hexGrid.GetCellFromPosition(hit.point));
+				break;
+			case SelectMode.Hex:
+				HandleHexEdit(hexGrid.GetPointFromPosition(hit.point));
+				break;
+			case SelectMode.Point:
+				HandlePointEdit(hexGrid.GetPointFromPosition(hit.point));
+				break;
+			case SelectMode.Edge:
+				HandleEdgeEdit(hexGrid.GetEdgeFromPosition(hit.point));
+				break;
+			case SelectMode.Multi:
+				HandleMultiEdit(hit);
+				break;
+			default:
+				throw new ArgumentOutOfRangeException();
+		}
+	}
+
+	private void HandleMultiEdit(RaycastHit hit) {
+		if (Mathf.Approximately(Vector3.Angle(hit.normal, Vector3.up), 90f)) {
+			HandleEdgeEdit(hexGrid.GetEdgeFromPosition(hit.point));
+		} else {
+			Vector2 hitXZ = Util.XZ(hit.point);
+			Point point = hexGrid.GetPointFromPosition(hit.point);
+			float distFromPoint = Vector2.Distance(
+				Util.XZ(point.transform.position), hitXZ);
+			if (distFromPoint < POINT_SELECT_RADIUS) {
+				HandlePointEdit(point);
+			} else if (distFromPoint < HEX_SELECT_RADIUS) {
+				HandleHexEdit(point);
+			} else {
+				TriCell cell = hexGrid.GetCellFromPosition(hit.point);
+				if (Vector2.Distance(cell.centerXZ, hitXZ) < CELL_SELECT_RADIUS) {
+					HandleTriEdit(cell);
+				} else {
+					HandleEdgeEdit(hexGrid.GetEdgeFromPosition(hit.point));
+				}
+			}
+		}
+	}
+
+	private void HandleEdgeEdit(Edge edge) {
+
+    }
+
+	private void HandleTriEdit(TriCell tri) {
+		tri.SetElevation(activeElevation);
+	}
+
+	private void HandlePointEdit(Point point) {
+		// point.Refresh();
+    }
+
+	private void HandleHexEdit(Point point) {
+		// don't do it this way, editing the tris in the hex should trigger the refreshes.
+		// point.RefreshHex();
+	}
+
+	#endregion
+
+	#region Hover Handlers
+
 	private void HandleHover() {
 		Ray inputRay = Camera.main.ScreenPointToRay(Input.mousePosition);
 		RaycastHit hit;
@@ -90,65 +175,7 @@ public class MapEditor : MonoBehaviour
 		}
 	}
 
-	void HandleClick() {
-		Ray inputRay = Camera.main.ScreenPointToRay(Input.mousePosition);
-		RaycastHit hit;
-		if (Physics.Raycast(inputRay, out hit)) {
-			switch (interactMode) {
-				case InteractMode.Edit:
-					switch (selectMode) {
-						case SelectMode.Tri:
-							EditTri(hexGrid.GetCellFromPosition(hit.point));
-							break;
-						case SelectMode.Hex:
-							EditHex(hexGrid.GetPointFromPosition(hit.point));
-							break;
-						case SelectMode.Point:
-							EditPoint(hexGrid.GetPointFromPosition(hit.point));
-							break;
-						case SelectMode.Edge:
-							EditEdge(hexGrid.GetEdgeFromPosition(hit.point));
-							break;
-						default:
-							throw new ArgumentOutOfRangeException();
-					}
-					break;
-				case InteractMode.Inspect:
-					if (selectMode == SelectMode.Edge) {
-						hexGrid.GetEdgeFromPosition(hit.point);
-                    }
-					break;
-			}
-		}
-	}
-
-    #region Edit Handlers
-
-    void EditEdge(Edge edge) {
-		
-    }
-
-	void EditTri(TriCell tri) {
-		tri.SetElevation(activeElevation);
-	}
-
-	void EditPoint(Point point) {
-		// point.Refresh();
-    }
-
-	void EditHex(Point point) {
-		// don't do it this way, editing the tris in the hex should trigger the refreshes.
-		// point.RefreshHex();
-	}
-
-    #endregion
-
-    #region Hover Handlers
-
 	private void HandleMultiHover(RaycastHit hit) {
-		Debug.Log("Normal: " + hit.normal.ToString());
-		Debug.Log("Angle: " + Vector3.Angle(hit.normal, Vector3.up).ToString());
-		Debug.Log("IsEdge: " + Mathf.Approximately(Vector3.Angle(hit.normal, Vector3.up), 90f).ToString());
 		if (Mathf.Approximately(Vector3.Angle(hit.normal, Vector3.up), 90f)) {
 			HandleEdgeHover(hexGrid.GetEdgeFromPosition(hit.point));
 		} else {
@@ -250,9 +277,10 @@ public class MapEditor : MonoBehaviour
 		hoverLineRenderer.SetPositions(pointArray);
 	}
 
-	#endregion
+    #endregion
 
-	public void SelectColor(int index) {
+    #region Map editor UI handlers
+    public void SelectColor(int index) {
 		activeColor = colors[index];
 	}
 
@@ -292,6 +320,8 @@ public class MapEditor : MonoBehaviour
 	public void SetElevation(float elevation) {
 		activeElevation = (int)elevation;
 	}
+
+    #endregion
 }
 
 public enum SelectMode { Tri, Point, Edge, Hex, Multi }
