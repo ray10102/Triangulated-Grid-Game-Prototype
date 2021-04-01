@@ -230,7 +230,19 @@ public class TriCell
 		}
 
 		public void UpdateColor() {
-			color = GridMetrics.colors[(int)cell.type];
+			if (cell.type == TriType.Flat) {
+				color = Color.black * ((float)Elevation / (float)GridMetrics.maxElevation);
+			} else if (cell.type == TriType.Cost) {
+				// A yellow green, getting more yellow the steeper it is
+				color = new Color(
+					Mathf.InverseLerp((float)GridMetrics.slopeThresholds[0],
+							   (float)GridMetrics.slopeThresholds[1],
+							   (float)Elevation),
+					1f,
+					0f);
+			} else {
+				color = GridMetrics.colors[(int)cell.type];
+			}
 		}
 	}
 }

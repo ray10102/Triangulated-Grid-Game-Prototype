@@ -9,12 +9,13 @@ public static class GridMetrics
 	public const float triHeight = outerRadius * 1.5f;
 	public const float SQRT_3 = 1.73205080757f;
 	public const int chunkSizeX = 5, chunkSizeZ = 5;
+	public const int maxElevation = 20;
 	// colors correspond to TriType enum
 	public static Color[] colors = {
-		Color.white,  // flat
+		Color.white,  // flat - unused, programatically calculated
 		Color.cyan,   // cliff
 		Color.green,  // slope 1: no traversal cost
-		Color.yellow, // slope 2: incurs traversal cost
+		Color.yellow, // slope 2: incurs traversal cost - unused, programatically calculated
 		Color.red,    // slope 3: requires traversal method
 	};
 
