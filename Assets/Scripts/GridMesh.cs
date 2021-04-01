@@ -73,27 +73,27 @@ public class GridMesh : MonoBehaviour
 						// Vertex order depends on which side is lower.
 						if (edge.Corners[0].Elevation < edge.Corners[2].Elevation) {
 							// Top tri lower
-							AddTriangle(center + Util.ElevationToVec3(edge.Corners[0].Elevation),
-								center + corner + Util.ElevationToVec3(edge.Corners[1].Elevation),
-								center + Util.ElevationToVec3(edge.Corners[2].Elevation));
-							// AddTriangleColor(edge.Corners[0].Color, edge.Corners[1].Color, edge.Corners[2].Color);
+							AddTriangle(center + corner + Util.ElevationToVec3(edge.Corners[0].Elevation),
+								center + corner + Util.ElevationToVec3(edge.Corners[2].Elevation),
+								center + Util.ElevationToVec3(edge.Corners[1].Elevation));
+							// AddTriangleColor(edge.Corners[0].Color, edge.Corners[2].Color, edge.Corners[1].Color);
 							AddTriangleColor(GridMetrics.colors[(int)TriType.Cliff]);
-							AddTriangle(center + corner + Util.ElevationToVec3((int)edge.Corners[1].Elevation),
-								center + corner + Util.ElevationToVec3((int)edge.Corners[3].Elevation),
-								center + Util.ElevationToVec3((int)edge.Corners[2].Elevation));
-							// AddTriangleColor(edge.Corners[1].Color, edge.Corners[3].Color, edge.Corners[2].Color);
+							AddTriangle(center + Util.ElevationToVec3((int)edge.Corners[1].Elevation),
+								center + corner + Util.ElevationToVec3((int)edge.Corners[2].Elevation),
+								center + Util.ElevationToVec3((int)edge.Corners[3].Elevation));
+							// AddTriangleColor(edge.Corners[1].Color, edge.Corners[2].Color, edge.Corners[3].Color);
 							AddTriangleColor(GridMetrics.colors[(int)TriType.Cliff]);
 						} else {
 							// Top tri higher
-							AddTriangle(center + corner + Util.ElevationToVec3((int)edge.Corners[1].Elevation),
-								center + Util.ElevationToVec3((int)edge.Corners[2].Elevation),
-								center + Util.ElevationToVec3((int)edge.Corners[0].Elevation));
-							// AddTriangleColor(edge.Corners[1].Color, edge.Corners[2].Color, edge.Corners[0].Color);
+							AddTriangle(center + Util.ElevationToVec3((int)edge.Corners[1].Elevation),
+								center + corner + Util.ElevationToVec3((int)edge.Corners[0].Elevation),
+								center + corner + Util.ElevationToVec3((int)edge.Corners[2].Elevation));
+							// AddTriangleColor(edge.Corners[1].Color, edge.Corners[0].Color, edge.Corners[2].Color);
 							AddTriangleColor(GridMetrics.colors[(int)TriType.Cliff]);
-							AddTriangle(center + Util.ElevationToVec3((int)edge.Corners[2].Elevation),
-								center + corner + Util.ElevationToVec3((int)edge.Corners[1].Elevation),
-								center + corner + Util.ElevationToVec3((int)edge.Corners[3].Elevation));
-							// AddTriangleColor(edge.Corners[2].Color, edge.Corners[1].Color, edge.Corners[3].Color);
+							AddTriangle(center + corner + Util.ElevationToVec3((int)edge.Corners[2].Elevation),
+								center + Util.ElevationToVec3((int)edge.Corners[3].Elevation),
+								center + Util.ElevationToVec3((int)edge.Corners[1].Elevation));
+							// AddTriangleColor(edge.Corners[2].Color, edge.Corners[3].Color, edge.Corners[1].Color);
 							AddTriangleColor(GridMetrics.colors[(int)TriType.Cliff]);
 						}
 					} else { // Only corner vertex different
