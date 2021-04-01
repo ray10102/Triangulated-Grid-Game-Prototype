@@ -28,7 +28,7 @@ public static class EdgeOrientationExtensions
             case EdgeOrientation.EW:
                 return new int[4] { 1, 2, 2, 1 };
             case EdgeOrientation.NWSE:
-                return new int[4] { 1, 0, 0, 1 };
+                return new int[4] { 0, 1, 1, 0 };
             case EdgeOrientation.SWNE:
                 return new int[4] { 2, 0, 0, 2 };
             default:

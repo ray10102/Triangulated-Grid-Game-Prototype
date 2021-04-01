@@ -234,6 +234,21 @@ public class TriCell
             }
 		}
 
+		/// <summary>
+		/// Returns the corner opposite to the edge containing this corner and the other.
+		/// </summary>
+		/// <param name="other">The other corner in this edge</param>
+		/// <returns>The corner opposite to the edge containing this corner and the other.</returns>
+		public CellCorner GetOppositeCorner(CellCorner other) {
+			if (other.Equals(prevCorner)) {
+				return nextCorner;
+            } else if (other.Equals(nextCorner)) {
+				return prevCorner;
+            } else {
+				throw new ArgumentException("This corner does not share an edge with the other corner");
+            }
+        }
+
 		public void UpdateColor() {
 			if (cell.type == TriType.Flat) {
 				color = Color.white * (1f - ((float)Elevation / (float)GridMetrics.maxElevation));

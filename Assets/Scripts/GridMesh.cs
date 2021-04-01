@@ -96,18 +96,31 @@ public class GridMesh : MonoBehaviour
 							// AddTriangleColor(edge.Corners[2].Color, edge.Corners[1].Color, edge.Corners[3].Color);
 							AddTriangleColor(GridMetrics.colors[(int)TriType.Cliff]);
 						}
-
-					} else { // Only top vertex different
-						AddTriangle(center + Util.ElevationToVec3((int)edge.Corners[0].Elevation),
-							center + Util.ElevationToVec3((int)edge.Corners[2].Elevation),
-							corner + Util.ElevationToVec3((int)edge.Corners[1].Elevation));
+					} else { // Only corner vertex different
+						if (edge.Corners[0].Elevation < edge.Corners[2].Elevation) { // tri facing top cell
+							AddTriangle(center + Util.ElevationToVec3((int)edge.Corners[1].Elevation),
+								center + corner + Util.ElevationToVec3((int)edge.Corners[0].Elevation),
+								center + corner + Util.ElevationToVec3((int)edge.Corners[2].Elevation));
+							AddTriangleColor(GridMetrics.colors[(int)TriType.Cliff]);
+						} else { // tri facing bottom cell
+							AddTriangle(center + Util.ElevationToVec3((int)edge.Corners[1].Elevation),
+								center + corner + Util.ElevationToVec3((int)edge.Corners[0].Elevation),
+								center + corner + Util.ElevationToVec3((int)edge.Corners[2].Elevation));
+							AddTriangleColor(GridMetrics.colors[(int)TriType.Cliff]);
+						}
+					}
+				} else if (edge.Corners[1].Elevation != edge.Corners[3].Elevation) { // Only center vertex different
+					if (edge.Corners[1].Elevation < edge.Corners[3].Elevation) { // tri facing top cell
+						AddTriangle(center + Util.ElevationToVec3((int)edge.Corners[1].Elevation),
+							center + corner + Util.ElevationToVec3((int)edge.Corners[0].Elevation),
+							center + Util.ElevationToVec3((int)edge.Corners[3].Elevation));
+						AddTriangleColor(GridMetrics.colors[(int)TriType.Cliff]);
+					} else { // tri facing bottom cell
+						AddTriangle(center + Util.ElevationToVec3((int)edge.Corners[1].Elevation),
+							center + corner + Util.ElevationToVec3((int)edge.Corners[0].Elevation),
+							center + Util.ElevationToVec3((int)edge.Corners[3].Elevation));
 						AddTriangleColor(GridMetrics.colors[(int)TriType.Cliff]);
 					}
-				} else if (edge.Corners[1].Elevation != edge.Corners[3].Elevation) { // Only bottom vertex different
-					AddTriangle(corner + Util.ElevationToVec3((int)edge.Corners[1].Elevation),
-							corner + Util.ElevationToVec3((int)edge.Corners[3].Elevation),
-							center + Util.ElevationToVec3((int)edge.Corners[2].Elevation));
-					AddTriangleColor(GridMetrics.colors[(int)TriType.Cliff]);
 				}
 			}
 		}

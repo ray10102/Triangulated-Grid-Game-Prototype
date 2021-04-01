@@ -72,6 +72,11 @@ public class Grid : MonoBehaviour
 	}
 
 	public Edge GetEdgeFromPosition(Vector3 position) {
+		int temp;
+		return GetEdgeFromPosition(position, out temp);
+	}
+
+	public Edge GetEdgeFromPosition(Vector3 position, out int cellIndex) {
 		Point point = GetPointFromPosition(position);
 		AxialCoordinates vert = point.coordinates;
 		Vector2 position2D = new Vector2(position.x, position.z);
@@ -98,6 +103,11 @@ public class Grid : MonoBehaviour
 			} else {
 				direction = EdgeDirection.SW;
 			}
+			if (position.x < closestPointPos.x) {
+				cellIndex = 0;
+			} else {
+				cellIndex = 1;
+			}
 		} else if (distNeg < distHorizontal) {
 			// neg slope line is closest
 			if (position.z > center.y) {
@@ -105,12 +115,22 @@ public class Grid : MonoBehaviour
 			} else {
 				direction = EdgeDirection.SE;
 			}
+			if (position.x > closestPointNeg.x) {
+				cellIndex = 0;
+			} else {
+				cellIndex = 1;
+			}
 		} else {
 			// horizontal line is closest
 			if (position.x > center.x) {
 				direction = EdgeDirection.E;
 			} else {
 				direction = EdgeDirection.W;
+			}
+			if (position.z > center.y) {
+				cellIndex = 0;
+			} else {
+				cellIndex = 1;
 			}
 		}
 		return point.GetEdge(direction);
@@ -120,16 +140,16 @@ public class Grid : MonoBehaviour
 		TriCell cell = GetCellFromPosition(position);
 		float closestDist = float.MaxValue;
 		int closestCorner = int.MinValue;
-		for(int i = 0; i < 3; i++) {
+		for (int i = 0; i < 3; i++) {
 			Vector3 cornerPos = cell.corners[i].Position;
 			float dist = Vector3.Distance(cornerPos, position);
 			if (dist < closestDist) {
 				closestDist = dist;
 				closestCorner = i;
-            }
-        }
+			}
+		}
 		return cell.corners[closestCorner];
-    }
+	}
 	#endregion
 
 	private void CreateChunks() {
@@ -143,9 +163,9 @@ public class Grid : MonoBehaviour
 		}
 	}
 
-    #region Initialization
+	#region Initialization
 
-    private void CreatePoints() {
+	private void CreatePoints() {
 		points = new Point[cellCountZ * cellCountX];
 		for (int z = 0, i = 0; z < cellCountZ; z++) {
 			for (int x = 0; x < cellCountX; x++) {
@@ -157,8 +177,8 @@ public class Grid : MonoBehaviour
 	private void InitPoints() {
 		for (int i = 0; i < points.Length; i++) {
 			InitPoint(points[i]);
-        }
-    }
+		}
+	}
 
 	private void InitPoint(Point point) {
 		point.GetCell(CellDirection.N).SetElevation(0);
@@ -234,7 +254,7 @@ public class Grid : MonoBehaviour
 							new Edge(EdgeOrientation.EW,
 									 point.GetCell(CellDirection.S),
 									 SEPoint.GetCell(CellDirection.SW)));
-                    }
+					}
 				}
 			}
 		}
@@ -258,9 +278,9 @@ public class Grid : MonoBehaviour
 		chunk.AddPoint(localX + localZ * GridMetrics.chunkSizeX, point);
 	}
 
-    #endregion
+	#endregion
 
-    private int GetPointIndexFromCoordinate(AxialCoordinates coordinates) {
+	private int GetPointIndexFromCoordinate(AxialCoordinates coordinates) {
 		return coordinates.X + coordinates.Z * cellCountX + coordinates.Z / 2;
 	}
 }

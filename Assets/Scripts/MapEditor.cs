@@ -6,6 +6,7 @@ using UnityEngine.UI;
 public class MapEditor : MonoBehaviour
 {
 	public const float POINT_SELECT_RADIUS = GridMetrics.edgeLength * POINT_RADIUS_MULTIPLIER;
+	public const float CORNER_SELECT_RADIUS = GridMetrics.outerRadius / 3f;
 	public const float HEX_SELECT_RADIUS = GridMetrics.outerRadius / 3f * 2f;
 	public const float CELL_SELECT_RADIUS = POINT_SELECT_RADIUS;
 	public const float POINT_RADIUS_MULTIPLIER = 0.2f;
@@ -16,14 +17,35 @@ public class MapEditor : MonoBehaviour
 	public Color[] colors;
 	public Grid hexGrid;
 
-	public Text toggleSelectModeLabel;
-	public Text toggleInteractModeLabel;
-	public LineRenderer hoverLineRenderer;
+	// Hover indicator
+	[SerializeField]
+	private LineRenderer hoverLineRenderer;
 
-	Color activeColor;
-	int activeElevation = 0;
+	[SerializeField]
+	private Dropdown selectModeDropdown;
+
+	// Labels
+	[SerializeField]
+	private Text toggleInteractModeLabel;
+	[SerializeField]
+	private Text elevationLabel;
+	[SerializeField]
+	private Button pointVsCornerButton;
+	private Text pointVsCornerLabel;
+
+	// Editing Toggles
+	[SerializeField]
+	private Toggle editElevationToggle;
+	[SerializeField]
+	private Toggle editEdgeTypeToggle;
+
+	private int activeElevation = 0;
+	private bool isEditingElevation;
+	private bool isEditingEdgeType;
 
 	private Vector3[] pointArray;
+	// if false, corners
+	private bool isMultiSelectingPoints;
 	private float clickStart;
 	private bool isClicking;
 	private bool isDragging {
@@ -40,9 +62,11 @@ public class MapEditor : MonoBehaviour
     }
 
 	void Awake() {
-		SelectColor(0);
 		// Max of 12 points needed to render a hover (hexagon with a cliff on every edge)
 		pointArray = new Vector3[12];
+		if (pointVsCornerButton) {
+			pointVsCornerLabel = pointVsCornerButton.GetComponentInChildren<Text>();
+        }
 	}
 
 	void Update() {
@@ -73,17 +97,18 @@ public class MapEditor : MonoBehaviour
 					HandleEdit(hit);
 					break;
 				case InteractMode.Inspect:
-					if (selectMode == SelectMode.Edge) {
-						hexGrid.GetEdgeFromPosition(hit.point);
-                    }
 					break;
 			}
 		}
 	}
 
-	#region Edit Handlers
+    #region Tools
 
-	private void HandleEdit(RaycastHit hit) {
+    #endregion
+
+    #region Edit Handlers
+
+    private void HandleEdit(RaycastHit hit) {
 		switch (selectMode) {
 			case SelectMode.Tri:
 				HandleTriEdit(hexGrid.GetCellFromPosition(hit.point));
@@ -95,7 +120,10 @@ public class MapEditor : MonoBehaviour
 				HandlePointEdit(hexGrid.GetPointFromPosition(hit.point));
 				break;
 			case SelectMode.Edge:
-				HandleEdgeEdit(hexGrid.GetEdgeFromPosition(hit.point));
+				HandleEdgeEdit(hit);
+				break;
+			case SelectMode.Corner:
+				HandleCornerEdit(hexGrid.GetCornerFromPosition(hit.point));
 				break;
 			case SelectMode.Multi:
 				HandleMultiEdit(hit);
@@ -107,14 +135,16 @@ public class MapEditor : MonoBehaviour
 
 	private void HandleMultiEdit(RaycastHit hit) {
 		if (Mathf.Approximately(Vector3.Angle(hit.normal, Vector3.up), 90f)) {
-			HandleEdgeEdit(hexGrid.GetEdgeFromPosition(hit.point));
+			HandleEdgeEdit(hit);
 		} else {
 			Vector2 hitXZ = Util.XZ(hit.point);
 			Point point = hexGrid.GetPointFromPosition(hit.point);
 			float distFromPoint = Vector2.Distance(
 				Util.XZ(point.transform.position), hitXZ);
-			if (distFromPoint < POINT_SELECT_RADIUS) {
+			if (isMultiSelectingPoints && distFromPoint < POINT_SELECT_RADIUS) {
 				HandlePointEdit(point);
+			} else if (!isMultiSelectingPoints && distFromPoint < CORNER_SELECT_RADIUS) {
+				HandleCornerEdit(hexGrid.GetCornerFromPosition(hit.point));
 			} else if (distFromPoint < HEX_SELECT_RADIUS) {
 				HandleHexEdit(point);
 			} else {
@@ -122,27 +152,56 @@ public class MapEditor : MonoBehaviour
 				if (Vector2.Distance(cell.centerXZ, hitXZ) < CELL_SELECT_RADIUS) {
 					HandleTriEdit(cell);
 				} else {
-					HandleEdgeEdit(hexGrid.GetEdgeFromPosition(hit.point));
+					HandleEdgeEdit(hit);
 				}
 			}
 		}
 	}
 
-	private void HandleEdgeEdit(Edge edge) {
-
+	private void HandleCornerEdit(TriCell.CellCorner corner) {
+		if (isEditingElevation) {
+			corner.Elevation = activeElevation;
+        }
     }
 
+	private void HandleEdgeEdit(RaycastHit hit) {
+		int cellIndex;
+		Edge edge = hexGrid.GetEdgeFromPosition(hit.point, out cellIndex);
+		if (isEditingElevation) {
+			edge.Corners[cellIndex * 2].Elevation = activeElevation;
+			edge.Corners[cellIndex * 2 + 1].Elevation = activeElevation;
+		}
+		if (isEditingEdgeType) {
+			if (edge.IsCliff) {
+				int otherCell = (cellIndex + 1) % 2;
+				edge.Corners[cellIndex * 2].Elevation = edge.Corners[otherCell * 2].Elevation;
+				edge.Corners[cellIndex * 2 + 1].Elevation = edge.Corners[otherCell * 2 + 1].Elevation;
+			} else {
+				TriCell.CellCorner c1 = edge.Corners[cellIndex * 2];
+				TriCell.CellCorner c2 = edge.Corners[cellIndex * 2 + 1];
+				TriCell.CellCorner c3 = c1.GetOppositeCorner(c2);
+				c1.Elevation = c3.Elevation;
+				c2.Elevation = c3.Elevation;
+			}
+		}
+	}
+
 	private void HandleTriEdit(TriCell tri) {
-		tri.SetElevation(activeElevation);
+		if (isEditingElevation) {
+			tri.SetElevation(activeElevation);
+		}
 	}
 
 	private void HandlePointEdit(Point point) {
-		// point.Refresh();
-    }
+		if (isEditingElevation) {
+
+		}
+	}
 
 	private void HandleHexEdit(Point point) {
-		// don't do it this way, editing the tris in the hex should trigger the refreshes.
-		// point.RefreshHex();
+		if (isEditingElevation) {
+
+		}
 	}
 
 	#endregion
@@ -166,6 +225,9 @@ public class MapEditor : MonoBehaviour
 				case SelectMode.Edge:
 					HandleEdgeHover(hexGrid.GetEdgeFromPosition(hit.point));
 					break;
+				case SelectMode.Corner:
+					HandleCornerHover(hexGrid.GetCornerFromPosition(hit.point));
+					break;
 				case SelectMode.Multi:
 					HandleMultiHover(hit);
 					break;
@@ -183,19 +245,30 @@ public class MapEditor : MonoBehaviour
 			Point point = hexGrid.GetPointFromPosition(hit.point);
 			float distFromPoint = Vector2.Distance(
 				Util.XZ(point.transform.position), hitXZ);
-			if (distFromPoint < POINT_SELECT_RADIUS) {
+			if (isMultiSelectingPoints && distFromPoint < POINT_SELECT_RADIUS) {
 				HandlePointHover(point);
+			} else if (!isMultiSelectingPoints && distFromPoint < CORNER_SELECT_RADIUS) {
+				HandleCornerHover(hexGrid.GetCornerFromPosition(hit.point));
 			} else if (distFromPoint < HEX_SELECT_RADIUS) {
 				HandleHexHover(point);
 			} else {
 				TriCell cell = hexGrid.GetCellFromPosition(hit.point);
 				if (Vector2.Distance(cell.centerXZ, hitXZ) < CELL_SELECT_RADIUS) {
 					HandleTriHover(cell);
-                } else {
+				} else {
 					HandleEdgeHover(hexGrid.GetEdgeFromPosition(hit.point));
-                }
+				}
 			}
 		}
+	}
+
+	private void HandleCornerHover(TriCell.CellCorner corner) {
+		hoverLineRenderer.loop = true;
+		hoverLineRenderer.positionCount = 3;
+		pointArray[0] = corner.Position;
+		pointArray[1] = pointArray[0] + (corner.PrevCorner.Position - pointArray[0]) * 0.5f;
+		pointArray[2] = pointArray[0] + (corner.NextCorner.Position - pointArray[0]) * 0.5f;
+		hoverLineRenderer.SetPositions(pointArray);
 	}
 
 	private void HandleTriHover(TriCell cell) {
@@ -270,6 +343,7 @@ public class MapEditor : MonoBehaviour
 	private void HandleEdgeHover(Edge edge) {
 		hoverLineRenderer.loop = true;
 		hoverLineRenderer.positionCount = 4;
+
 		pointArray[0] = edge.Corners[0].Position;
 		pointArray[1] = edge.Corners[1].Position;
 		pointArray[2] = edge.Corners[3].Position;
@@ -280,32 +354,17 @@ public class MapEditor : MonoBehaviour
     #endregion
 
     #region Map editor UI handlers
-    public void SelectColor(int index) {
-		activeColor = colors[index];
+
+	public void HandleSelectModeChange() {
+		selectMode = (SelectMode)selectModeDropdown.value;
+		if (selectMode == SelectMode.Multi) {
+			pointVsCornerButton.gameObject.SetActive(true);
+		} else {
+			pointVsCornerButton.gameObject.SetActive(false);
+		}
 	}
 
-	public void ChangeSelectMode() {
-		selectMode = (SelectMode) (((int)selectMode + 1) % Enum.GetValues(typeof(SelectMode)).Length);
-		switch (selectMode) {
-			case SelectMode.Tri:
-				toggleSelectModeLabel.text = "Tri Select";
-				break;
-			case SelectMode.Hex:
-				toggleSelectModeLabel.text = "Hex Select";
-				break;
-			case SelectMode.Point:
-				toggleSelectModeLabel.text = "Point Select";
-				break;
-			case SelectMode.Edge:
-				toggleSelectModeLabel.text = "Edge Select";
-				break;
-			case SelectMode.Multi:
-				toggleSelectModeLabel.text = "Multi Select";
-				break;
-		}
-    }
-
-	public void ChangeInteractMode() {
+	public void HandleInteractModeToggle() {
 		interactMode = (InteractMode)(((int)interactMode + 1) % 2);
 		switch (interactMode) {
 			case InteractMode.Edit:
@@ -317,12 +376,30 @@ public class MapEditor : MonoBehaviour
 		}
 	}
 
+	public void HandlePointVsCornerMode() {
+		isMultiSelectingPoints = !isMultiSelectingPoints;
+		if (isMultiSelectingPoints) {
+			pointVsCornerLabel.text = "Points";
+		} else {
+			pointVsCornerLabel.text = "Corners";
+		}
+	}
+
+	public void HandleEditEdgeTypeToggle() {
+		isEditingEdgeType = editEdgeTypeToggle.isOn;
+	}
+
+	public void HandleEditElevationToggle() {
+		isEditingElevation = editElevationToggle.isOn;
+    }
+
 	public void SetElevation(float elevation) {
 		activeElevation = (int)elevation;
+		elevationLabel.text = activeElevation.ToString();
 	}
 
     #endregion
 }
 
-public enum SelectMode { Tri, Point, Edge, Hex, Multi }
+public enum SelectMode { Tri, Point, Edge, Hex, Corner, Multi }
 public enum InteractMode { Edit, Inspect } 
