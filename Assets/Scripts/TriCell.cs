@@ -9,6 +9,11 @@ public class TriCell
     public TriOrientation orientation;
 	// Counter clockwise corners starting from center
 	public CellCorner[] corners;
+	public Vector2 centerXZ {
+		get {
+			return Util.XZ(point.transform.position) + (orientation == TriOrientation.Top ? 1 : -1) * Vector2.up * GridMetrics.outerRadius;
+        }
+    }
 
 	private Point point;
     private TriType type;
@@ -231,7 +236,7 @@ public class TriCell
 
 		public void UpdateColor() {
 			if (cell.type == TriType.Flat) {
-				color = Color.black * ((float)Elevation / (float)GridMetrics.maxElevation);
+				color = Color.white * (1f - ((float)Elevation / (float)GridMetrics.maxElevation));
 			} else if (cell.type == TriType.Cost) {
 				// A yellow green, getting more yellow the steeper it is
 				color = new Color(

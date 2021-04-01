@@ -5,7 +5,11 @@ using UnityEngine.UI;
 
 public class MapEditor : MonoBehaviour
 {
-	public const float dragThreshold = 0.5f;
+	public const float POINT_SELECT_RADIUS = GridMetrics.edgeLength * POINT_RADIUS_MULTIPLIER;
+	public const float HEX_SELECT_RADIUS = GridMetrics.outerRadius / 3f * 2f;
+	public const float CELL_SELECT_RADIUS = POINT_SELECT_RADIUS;
+	public const float POINT_RADIUS_MULTIPLIER = 0.2f;
+	public const float dragThreshold = 0.25f;
 
 	public SelectMode selectMode;
 	public InteractMode interactMode;
@@ -66,16 +70,19 @@ public class MapEditor : MonoBehaviour
 		if (Physics.Raycast(inputRay, out hit)) {
 			switch (selectMode) {
 				case SelectMode.Tri:
-					HoverTri(hexGrid.GetCellFromPosition(hit.point));
+					HandleTriHover(hexGrid.GetCellFromPosition(hit.point));
 					break;
 				case SelectMode.Hex:
-					HoverHex(hexGrid.GetPointFromPosition(hit.point));
+					HandleHexHover(hexGrid.GetPointFromPosition(hit.point));
 					break;
 				case SelectMode.Point:
-					HoverPoint(hexGrid.GetPointFromPosition(hit.point));
+					HandlePointHover(hexGrid.GetPointFromPosition(hit.point));
 					break;
 				case SelectMode.Edge:
-					HoverEdge(hexGrid.GetEdgeFromPosition(hit.point));
+					HandleEdgeHover(hexGrid.GetEdgeFromPosition(hit.point));
+					break;
+				case SelectMode.Multi:
+					HandleMultiHover(hit);
 					break;
 				default:
 					throw new ArgumentOutOfRangeException();
@@ -137,7 +144,34 @@ public class MapEditor : MonoBehaviour
     #endregion
 
     #region Hover Handlers
-	private void HoverTri(TriCell cell) {
+
+	private void HandleMultiHover(RaycastHit hit) {
+		Debug.Log("Normal: " + hit.normal.ToString());
+		Debug.Log("Angle: " + Vector3.Angle(hit.normal, Vector3.up).ToString());
+		Debug.Log("IsEdge: " + Mathf.Approximately(Vector3.Angle(hit.normal, Vector3.up), 90f).ToString());
+		if (Mathf.Approximately(Vector3.Angle(hit.normal, Vector3.up), 90f)) {
+			HandleEdgeHover(hexGrid.GetEdgeFromPosition(hit.point));
+		} else {
+			Vector2 hitXZ = Util.XZ(hit.point);
+			Point point = hexGrid.GetPointFromPosition(hit.point);
+			float distFromPoint = Vector2.Distance(
+				Util.XZ(point.transform.position), hitXZ);
+			if (distFromPoint < POINT_SELECT_RADIUS) {
+				HandlePointHover(point);
+			} else if (distFromPoint < HEX_SELECT_RADIUS) {
+				HandleHexHover(point);
+			} else {
+				TriCell cell = hexGrid.GetCellFromPosition(hit.point);
+				if (Vector2.Distance(cell.centerXZ, hitXZ) < CELL_SELECT_RADIUS) {
+					HandleTriHover(cell);
+                } else {
+					HandleEdgeHover(hexGrid.GetEdgeFromPosition(hit.point));
+                }
+			}
+		}
+	}
+
+	private void HandleTriHover(TriCell cell) {
 		hoverLineRenderer.loop = true;
 		hoverLineRenderer.positionCount = 3;
 		for (int i = 0; i < 3; i++) {
@@ -146,7 +180,7 @@ public class MapEditor : MonoBehaviour
 		hoverLineRenderer.SetPositions(pointArray);
     }
 
-	private void HoverPoint(Point point) {
+	private void HandlePointHover(Point point) {
 		int minElevation = int.MaxValue;
 		int maxElevation = int.MinValue;
 		for(int i = 0; i < 6; i++) {
@@ -182,13 +216,13 @@ public class MapEditor : MonoBehaviour
 			pointArray[11] = point.GetCell(CellDirection.NW).corners[0].Position;
 			for (int i = 0; i < 12; i++) {
 				Vector3 diff = pointArray[i] - center;
-				pointArray[i] = center + diff * 0.2f;
+				pointArray[i] = center + diff * POINT_RADIUS_MULTIPLIER;
             }
 		}
 		hoverLineRenderer.SetPositions(pointArray);
 	}
 
-	private void HoverHex(Point point) {
+	private void HandleHexHover(Point point) {
 		hoverLineRenderer.loop = true;
 		hoverLineRenderer.positionCount = 12;
 		pointArray[0] = point.GetCell(CellDirection.N).corners[1].Position;
@@ -206,7 +240,7 @@ public class MapEditor : MonoBehaviour
 		hoverLineRenderer.SetPositions(pointArray);
 	}
 
-	private void HoverEdge(Edge edge) {
+	private void HandleEdgeHover(Edge edge) {
 		hoverLineRenderer.loop = true;
 		hoverLineRenderer.positionCount = 4;
 		pointArray[0] = edge.Corners[0].Position;
@@ -223,19 +257,22 @@ public class MapEditor : MonoBehaviour
 	}
 
 	public void ChangeSelectMode() {
-		selectMode = (SelectMode) (((int)selectMode + 1) % 4);
+		selectMode = (SelectMode) (((int)selectMode + 1) % Enum.GetValues(typeof(SelectMode)).Length);
 		switch (selectMode) {
 			case SelectMode.Tri:
-				toggleSelectModeLabel.text = "Tri Mode";
+				toggleSelectModeLabel.text = "Tri Select";
 				break;
 			case SelectMode.Hex:
-				toggleSelectModeLabel.text = "Hex Mode";
+				toggleSelectModeLabel.text = "Hex Select";
 				break;
 			case SelectMode.Point:
-				toggleSelectModeLabel.text = "Point Mode";
+				toggleSelectModeLabel.text = "Point Select";
 				break;
 			case SelectMode.Edge:
-				toggleSelectModeLabel.text = "Edge Mode";
+				toggleSelectModeLabel.text = "Edge Select";
+				break;
+			case SelectMode.Multi:
+				toggleSelectModeLabel.text = "Multi Select";
 				break;
 		}
     }
@@ -257,5 +294,5 @@ public class MapEditor : MonoBehaviour
 	}
 }
 
-public enum SelectMode { Tri, Point, Edge, Hex }
+public enum SelectMode { Tri, Point, Edge, Hex, Multi }
 public enum InteractMode { Edit, Inspect } 

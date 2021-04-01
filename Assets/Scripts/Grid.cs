@@ -90,7 +90,6 @@ public class Grid : MonoBehaviour
 		float distPos = Vector2.Distance(closestPointPos, position2D);
 		float distNeg = Vector2.Distance(closestPointNeg, position2D);
 		float distHorizontal = Mathf.Abs(position2D.y - center.y);
-		Debug.Log(distPos + ", " + distNeg + ", " + distHorizontal);
 		EdgeDirection direction;
 		if (distPos < distNeg && distPos < distHorizontal) {
 			// pos slope line is closest
@@ -231,8 +230,6 @@ public class Grid : MonoBehaviour
 								 point.GetCell(CellDirection.S)));
 					// EW edge
 					if (x > 0) {
-						Debug.Log("S cell: " + (point.GetCell(CellDirection.S) != null).ToString());
-						Debug.Log("SE SW cell: " + (SEPoint.GetCell(CellDirection.SW) != null).ToString());
 						SEPoint.SetEdge(EdgeDirection.W,
 							new Edge(EdgeOrientation.EW,
 									 point.GetCell(CellDirection.S),

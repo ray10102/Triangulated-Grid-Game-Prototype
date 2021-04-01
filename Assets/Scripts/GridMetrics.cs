@@ -2,7 +2,7 @@
 
 public static class GridMetrics
 {
-	public const float elevationStep = 5f;
+	public const float elevationStep = triHeight / 2f;
 	public const float outerRadius = 5f;
 	public const float innerRadius = outerRadius * 0.866025404f;
 	public const float edgeLength = 2f * innerRadius;
