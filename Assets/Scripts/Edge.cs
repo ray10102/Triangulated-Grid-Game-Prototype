@@ -6,6 +6,7 @@ public class Edge
     public EdgeOrientation direction;
     // cells[0] is the top cell and cells[1] is the bottom cell.
     public TriCell[] cells;
+
     /// <summary>
     /// Checks if all corresponding vertices match. If they don't, then this edge features a cliff.
     /// </summary>
@@ -26,6 +27,17 @@ public class Edge
                 }
             }
             return corners;
+        }
+    }
+
+    public int LowSideIndex {
+        get {
+            if (Corners[0].Elevation < Corners[2].Elevation || Corners[1].Elevation < Corners[3].Elevation) {
+                return 0;
+            } else {
+                // Will return 1 if this edge is not a cliff. Only use this on actual cliffs.
+                return 1;
+            }
         }
     }
 

@@ -71,12 +71,14 @@ public class Grid : MonoBehaviour
 		}
 	}
 
-	public Edge GetEdgeFromPosition(Vector3 position) {
-		int temp;
-		return GetEdgeFromPosition(position, out temp);
-	}
-
-	public Edge GetEdgeFromPosition(Vector3 position, out int cellIndex) {
+	public Edge GetEdgeFromRaycast(RaycastHit hit, out int cellIndex) {
+		// will be overriden, compiler complains without this
+        cellIndex = 0;
+        Vector3 position = hit.point;
+		bool clickedCliff = false;
+		if (Mathf.Approximately(Vector3.Angle(hit.normal, Vector3.up), 90f)) {
+			clickedCliff = true;
+		}
 		Point point = GetPointFromPosition(position);
 		AxialCoordinates vert = point.coordinates;
 		Vector2 position2D = new Vector2(position.x, position.z);
@@ -103,10 +105,12 @@ public class Grid : MonoBehaviour
 			} else {
 				direction = EdgeDirection.SW;
 			}
-			if (position.x < closestPointPos.x) {
-				cellIndex = 0;
-			} else {
-				cellIndex = 1;
+			if (!clickedCliff) {
+				if (position.x < closestPointPos.x) {
+					cellIndex = 0;
+				} else {
+					cellIndex = 1;
+				}
 			}
 		} else if (distNeg < distHorizontal) {
 			// neg slope line is closest
@@ -115,10 +119,12 @@ public class Grid : MonoBehaviour
 			} else {
 				direction = EdgeDirection.SE;
 			}
-			if (position.x > closestPointNeg.x) {
-				cellIndex = 0;
-			} else {
-				cellIndex = 1;
+			if (!clickedCliff) {
+				if (position.x > closestPointNeg.x) {
+					cellIndex = 0;
+				} else {
+					cellIndex = 1;
+				}
 			}
 		} else {
 			// horizontal line is closest
@@ -127,16 +133,27 @@ public class Grid : MonoBehaviour
 			} else {
 				direction = EdgeDirection.W;
 			}
-			if (position.z > center.y) {
-				cellIndex = 0;
-			} else {
-				cellIndex = 1;
+			if (!clickedCliff) {
+				if (position.z > center.y) {
+					cellIndex = 0;
+				} else {
+					cellIndex = 1;
+				}
 			}
 		}
-		return point.GetEdge(direction);
-	}
+		Edge result = point.GetEdge(direction);
+		if (clickedCliff) {
+			int lowIndex = result.LowSideIndex;
+			int highIndex = lowIndex == 0 ? 1 : 0;
+			float minTop = Mathf.Min(result.Corners[highIndex * 2].Position.y, result.Corners[highIndex * 2 + 1].Position.y);
+			float maxBottom = Mathf.Max(result.Corners[lowIndex * 2].Position.y, result.Corners[lowIndex * 2 + 1].Position.y);
+			float t = Mathf.InverseLerp(maxBottom, minTop, position.y);
+			cellIndex = t < 0.5f ? lowIndex : highIndex;
+		}
+        return result;
+    }
 
-	public TriCell.CellCorner GetCornerFromPosition(Vector3 position) {
+    public TriCell.CellCorner GetCornerFromPosition(Vector3 position) {
 		TriCell cell = GetCellFromPosition(position);
 		float closestDist = float.MaxValue;
 		int closestCorner = int.MinValue;

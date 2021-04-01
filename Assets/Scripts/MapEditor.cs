@@ -8,7 +8,8 @@ public class MapEditor : MonoBehaviour
 	public const float POINT_SELECT_RADIUS = GridMetrics.edgeLength * POINT_RADIUS_MULTIPLIER;
 	public const float CORNER_SELECT_RADIUS = GridMetrics.outerRadius / 3f;
 	public const float HEX_SELECT_RADIUS = GridMetrics.outerRadius / 3f * 2f;
-	public const float CELL_SELECT_RADIUS = POINT_SELECT_RADIUS;
+	public const float CELL_SELECT_RADIUS = GridMetrics.outerRadius / 3f;
+	public const float EDGE_DIRECTION_INDICATOR_RADIUS = GridMetrics.outerRadius * 0.25f;
 	public const float POINT_RADIUS_MULTIPLIER = 0.2f;
 	public const float dragThreshold = 0.25f;
 
@@ -166,7 +167,7 @@ public class MapEditor : MonoBehaviour
 
 	private void HandleEdgeEdit(RaycastHit hit) {
 		int cellIndex;
-		Edge edge = hexGrid.GetEdgeFromPosition(hit.point, out cellIndex);
+		Edge edge = hexGrid.GetEdgeFromRaycast(hit, out cellIndex);
 		if (isEditingElevation) {
 			edge.Corners[cellIndex * 2].Elevation = activeElevation;
 			edge.Corners[cellIndex * 2 + 1].Elevation = activeElevation;
@@ -223,7 +224,7 @@ public class MapEditor : MonoBehaviour
 					HandlePointHover(hexGrid.GetPointFromPosition(hit.point));
 					break;
 				case SelectMode.Edge:
-					HandleEdgeHover(hexGrid.GetEdgeFromPosition(hit.point));
+					HandleEdgeHover(hit);
 					break;
 				case SelectMode.Corner:
 					HandleCornerHover(hexGrid.GetCornerFromPosition(hit.point));
@@ -239,7 +240,7 @@ public class MapEditor : MonoBehaviour
 
 	private void HandleMultiHover(RaycastHit hit) {
 		if (Mathf.Approximately(Vector3.Angle(hit.normal, Vector3.up), 90f)) {
-			HandleEdgeHover(hexGrid.GetEdgeFromPosition(hit.point));
+			HandleEdgeHover(hit);
 		} else {
 			Vector2 hitXZ = Util.XZ(hit.point);
 			Point point = hexGrid.GetPointFromPosition(hit.point);
@@ -256,7 +257,7 @@ public class MapEditor : MonoBehaviour
 				if (Vector2.Distance(cell.centerXZ, hitXZ) < CELL_SELECT_RADIUS) {
 					HandleTriHover(cell);
 				} else {
-					HandleEdgeHover(hexGrid.GetEdgeFromPosition(hit.point));
+					HandleEdgeHover(hit);
 				}
 			}
 		}
@@ -340,14 +341,33 @@ public class MapEditor : MonoBehaviour
 		hoverLineRenderer.SetPositions(pointArray);
 	}
 
-	private void HandleEdgeHover(Edge edge) {
+	private void HandleEdgeHover(RaycastHit hit) {
+		int cellIndex;
+		Edge edge = hexGrid.GetEdgeFromRaycast(hit, out cellIndex);
 		hoverLineRenderer.loop = true;
-		hoverLineRenderer.positionCount = 4;
-
+		hoverLineRenderer.positionCount = 5;
+		int offset = 0;
+		// This is really ugly but more readable than doing it cleaner imo
 		pointArray[0] = edge.Corners[0].Position;
-		pointArray[1] = edge.Corners[1].Position;
-		pointArray[2] = edge.Corners[3].Position;
-		pointArray[3] = edge.Corners[2].Position;
+		if (cellIndex == 0) {
+			TriCell.CellCorner c1 = edge.Corners[0];
+			TriCell.CellCorner c2 = edge.Corners[1];
+
+			Vector3 half = c2.Position + (c1.Position - c2.Position) * 0.5f;
+			pointArray[1] = half + (c1.GetOppositeCorner(c2).Position - half).normalized * EDGE_DIRECTION_INDICATOR_RADIUS;
+			offset++;
+        }
+		pointArray[1 + offset] = edge.Corners[1].Position;
+		pointArray[2 + offset] = edge.Corners[3].Position;
+		if (cellIndex == 1) {
+			TriCell.CellCorner c1 = edge.Corners[2];
+			TriCell.CellCorner c2 = edge.Corners[3];
+
+			Vector3 half = c2.Position + (c1.Position - c2.Position) * 0.5f;
+			pointArray[3] = half + (c1.GetOppositeCorner(c2).Position - half).normalized * EDGE_DIRECTION_INDICATOR_RADIUS;
+			offset++;
+		}
+		pointArray[3 + offset] = edge.Corners[2].Position;
 		hoverLineRenderer.SetPositions(pointArray);
 	}
 
