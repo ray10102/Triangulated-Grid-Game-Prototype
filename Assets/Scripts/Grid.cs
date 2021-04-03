@@ -6,7 +6,6 @@ public class Grid : MonoBehaviour
 	public bool shouldLabelOnTriangle;
 
 	public GridChunk chunkPrefab;
-	public Point pointPrefab;
 	public Text cellLabelPrefab;
 	public int chunkCountX = 4, chunkCountZ = 3;
 
@@ -43,7 +42,7 @@ public class Grid : MonoBehaviour
 	public TriCell GetCellFromPosition(Vector3 position) {
 		Point point = GetPointFromPosition(position);
 		AxialCoordinates vert = point.coordinates;
-		Vector2 center = Util.XZ(point.transform.position);
+		Vector2 center = point.position;
 		// y intercept of triangle edge w positive slope
 		float bPos = Util.FindIntercept2D(GridMetrics.SQRT_3, center);
 		// "" w negative slope
@@ -198,18 +197,30 @@ public class Grid : MonoBehaviour
 	}
 
 	private void InitPoint(Point point) {
-		point.GetCell(CellDirection.N).SetElevation(0);
-		point.GetCell(CellDirection.S).SetElevation(0);
+		if (point.type != PointType.TopEdge) {
+			point.GetCell(CellDirection.N).SetElevation(0);
+		}
+		if (point.type != PointType.BottomEdge) {
+			point.GetCell(CellDirection.S).SetElevation(0);
+        }
+	}
+
+	private PointType GetPointType(int x, int z) {
+		if ((x == cellCountX - 1 && (z & 1) == 1) || // rightmost point of odd  row
+			(x == 0 && (z & 1) == 0)) { // leftmost point of even row
+			return PointType.HorizontalEdge;
+        }
+		if (z == 0) {
+			return PointType.BottomEdge;
+        }
+		if (z == cellCountZ - 1) {
+			return PointType.TopEdge;
+        }
+		return PointType.Center;
 	}
 
 	private void CreatePoint(int x, int z, int i) {
-		Point point = points[i] = Instantiate<Point>(pointPrefab);
-		point.coordinates = AxialCoordinates.FromOffsetCoordinates(x, z);
-		Vector2 center2D = AxialCoordinates.GetCenterFromAxial(point.coordinates);
-		point.transform.localPosition = new Vector3(center2D.x, 0f, center2D.y);
-		point.SetCell(CellDirection.N, new TriCell(point, TriOrientation.Top));
-		point.SetCell(CellDirection.S, new TriCell(point, TriOrientation.Bottom));
-		point.name = "Cell " + point.coordinates.ToString();
+		Point point = points[i] = new Point(GetPointType(x, z), x, z);
 		// Set neighbors and edges
 		if (x > 0) {
 			point.SetNeighbor(EdgeDirection.W, points[i - 1]);
@@ -217,7 +228,7 @@ public class Grid : MonoBehaviour
 		}
 		if (z > 0) {
 			// Treat every other row differently
-			if ((z & 1) == 0) {
+			if ((z & 1) == 0) { // Even row
 				Point SEPoint = points[i - cellCountX];
 				point.SetNeighbor(EdgeDirection.SE, SEPoint);
 				point.SetCell(CellDirection.SE, SEPoint.GetCell(CellDirection.N));
@@ -245,7 +256,7 @@ public class Grid : MonoBehaviour
 								 point.GetCell(CellDirection.SW),
 								 point.GetCell(CellDirection.S)));
 				}
-			} else {
+			} else { // Odd row
 				Point SWPoint = points[i - cellCountX];
 				point.SetNeighbor(EdgeDirection.SW, SWPoint);
 				point.SetCell(CellDirection.SW, SWPoint.GetCell(CellDirection.N));
@@ -278,7 +289,7 @@ public class Grid : MonoBehaviour
 		// Add Text Label
 		Text label = Instantiate<Text>(cellLabelPrefab);
 		label.rectTransform.anchoredPosition =
-			new Vector2(center2D.x, center2D.y + 0.5f);
+			new Vector2(point.position.x, point.position.y + 0.5f);
 		label.text = point.coordinates.GetPerVertexTextLabel(shouldLabelOnTriangle);
 		point.uiRect = label.rectTransform;
 

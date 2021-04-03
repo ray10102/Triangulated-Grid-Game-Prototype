@@ -17,6 +17,10 @@ public static class Util
         return new Vector2(vec3.x, vec3.z);
     }
 
+    public static Vector3 ToVec3(Vector2 vec2) {
+        return new Vector3(vec2.x, 0f, vec2.y);
+    }
+
     public static Vector2 FindIntersectionOfLines(float m1, float m2, float b1, float b2) {
         if (m1 == m2) {
             throw new ArgumentException();

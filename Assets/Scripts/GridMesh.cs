@@ -25,13 +25,13 @@ public class GridMesh : MonoBehaviour
 		GridMesh.height = height;
 	}
 
-	public void Triangulate(Point[] cells) {
+	public void Triangulate(Point[] points) {
 		hexMesh.Clear();
 		vertices.Clear();
 		triangles.Clear();
 		colors.Clear();
-		for (int i = 0; i < cells.Length; i++) {
-			Triangulate(cells[i]);
+		for (int i = 0; i < points.Length; i++) {
+			Triangulate(points[i]);
 		}
 		hexMesh.vertices = vertices.ToArray();
 		hexMesh.triangles = triangles.ToArray();
@@ -42,21 +42,20 @@ public class GridMesh : MonoBehaviour
 	}
 
 	private void Triangulate(Point point) {
-		if (height < 0) {
-            Debug.LogError("Forgot to set grid height ya dingus");
-        }
-		Vector3 center = point.transform.localPosition;
-		if (point.coordinates.Z < height - 1) {
-			AddTriangle(center + Util.ElevationToVec3(point.GetCell(CellDirection.N).corners[0].Elevation),
-				center + GridMetrics.GetCorner(EdgeDirection.NW) + Util.ElevationToVec3(point.GetCell(CellDirection.N).corners[1].Elevation),
-				center + GridMetrics.GetCorner(EdgeDirection.NE) + Util.ElevationToVec3(point.GetCell(CellDirection.N).corners[2].Elevation));
-			AddTriangleColor(point.GetCell(CellDirection.N));
-		}
-		if (point.coordinates.Z > 0) {
-			AddTriangle(center + Util.ElevationToVec3(point.GetCell(CellDirection.S).corners[0].Elevation),
-				center + GridMetrics.GetCorner(EdgeDirection.SE) + Util.ElevationToVec3(point.GetCell(CellDirection.S).corners[1].Elevation),
-				center + GridMetrics.GetCorner(EdgeDirection.SW) + Util.ElevationToVec3(point.GetCell(CellDirection.S).corners[2].Elevation));
-			AddTriangleColor(point.GetCell(CellDirection.S));
+		Vector3 center = Util.ToVec3(point.position);
+		if (point.type != PointType.HorizontalEdge) {
+			if (point.type != PointType.TopEdge) { // Top Triangle
+				AddTriangle(center + Util.ElevationToVec3(point.GetCell(CellDirection.N).corners[0].Elevation),
+					center + GridMetrics.GetCorner(EdgeDirection.NW) + Util.ElevationToVec3(point.GetCell(CellDirection.N).corners[1].Elevation),
+					center + GridMetrics.GetCorner(EdgeDirection.NE) + Util.ElevationToVec3(point.GetCell(CellDirection.N).corners[2].Elevation));
+				AddTriangleColor(point.GetCell(CellDirection.N));
+			}
+			if (point.type != PointType.BottomEdge) { // Bottom Triangle
+				AddTriangle(center + Util.ElevationToVec3(point.GetCell(CellDirection.S).corners[0].Elevation),
+					center + GridMetrics.GetCorner(EdgeDirection.SE) + Util.ElevationToVec3(point.GetCell(CellDirection.S).corners[1].Elevation),
+					center + GridMetrics.GetCorner(EdgeDirection.SW) + Util.ElevationToVec3(point.GetCell(CellDirection.S).corners[2].Elevation));
+				AddTriangleColor(point.GetCell(CellDirection.S));
+			}
 		}
 
 		// Triangulate cliffs

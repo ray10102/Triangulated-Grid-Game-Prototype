@@ -141,7 +141,7 @@ public class MapEditor : MonoBehaviour
 			Vector2 hitXZ = Util.XZ(hit.point);
 			Point point = hexGrid.GetPointFromPosition(hit.point);
 			float distFromPoint = Vector2.Distance(
-				Util.XZ(point.transform.position), hitXZ);
+				point.position, hitXZ);
 			if (isMultiSelectingPoints && distFromPoint < POINT_SELECT_RADIUS) {
 				HandlePointEdit(point);
 			} else if (!isMultiSelectingPoints && distFromPoint < CORNER_SELECT_RADIUS) {
@@ -245,7 +245,7 @@ public class MapEditor : MonoBehaviour
 			Vector2 hitXZ = Util.XZ(hit.point);
 			Point point = hexGrid.GetPointFromPosition(hit.point);
 			float distFromPoint = Vector2.Distance(
-				Util.XZ(point.transform.position), hitXZ);
+				point.position, hitXZ);
 			if (isMultiSelectingPoints && distFromPoint < POINT_SELECT_RADIUS) {
 				HandlePointHover(point);
 			} else if (!isMultiSelectingPoints && distFromPoint < CORNER_SELECT_RADIUS) {
@@ -297,12 +297,13 @@ public class MapEditor : MonoBehaviour
 		if (minElevation != maxElevation) { // draw vertical line
 			hoverLineRenderer.loop = false;
 			hoverLineRenderer.positionCount = 2;
-			pointArray[0] = point.transform.position + Util.ElevationToVec3(minElevation);
-			pointArray[1] = point.transform.position + Util.ElevationToVec3(maxElevation);
+			Vector3 pos = Util.ToVec3(point.position);
+			pointArray[0] = pos + Util.ElevationToVec3(minElevation);
+			pointArray[1] = pos + Util.ElevationToVec3(maxElevation);
 		} else { // Draw hex around point
 			hoverLineRenderer.loop = false;
 			hoverLineRenderer.positionCount = 12;
-			Vector3 center = point.transform.position + Util.ElevationToVec3(minElevation);
+			Vector3 center = Util.ToVec3(point.position) + Util.ElevationToVec3(minElevation);
 			pointArray[0] = point.GetCell(CellDirection.N).corners[1].Position;
 			pointArray[1] = point.GetCell(CellDirection.N).corners[2].Position;
 			pointArray[2] = point.GetCell(CellDirection.NE).corners[0].Position;

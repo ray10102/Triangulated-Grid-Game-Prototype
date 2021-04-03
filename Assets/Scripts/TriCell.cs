@@ -11,7 +11,7 @@ public class TriCell
 	public CellCorner[] corners;
 	public Vector2 centerXZ {
 		get {
-			return Util.XZ(point.transform.position) + (orientation == TriOrientation.Top ? 1 : -1) * Vector2.up * GridMetrics.outerRadius;
+			return point.position + (orientation == TriOrientation.Top ? 1 : -1) * Vector2.up * GridMetrics.outerRadius;
         }
     }
 
@@ -192,7 +192,7 @@ public class TriCell
 
 		public Vector3 Position {
 			get {
-				return cell.GetPoint(index).transform.position + Util.ElevationToVec3(Elevation);
+				return Util.ToVec3(cell.GetPoint(index).position) + Util.ElevationToVec3(Elevation);
             }
         }
 

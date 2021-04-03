@@ -1,24 +1,36 @@
 ﻿using UnityEngine;
 /// <summary>
-///  A TriPair represents a vertex and the triangle cells above and below that vertex in the Z axis.
+///  A Point represents the 2D location of the vertex between 6 cells, the center of a hex.
 /// </summary>
-public class Point : MonoBehaviour
+public class Point
 {
+    public Vector2 position;
+    public PointType type {
+        get;
+        private set;
+    }
     public AxialCoordinates coordinates;
     public TriCell[] cells;
     public GridChunk chunk;
     // Label
     public RectTransform uiRect;
 
-    [SerializeField]
     private Point[] neighbors;
-    [SerializeField]
     private Edge[] edges;
 
-    private void Awake() {
+    public Point(PointType type, int x, int z) {
+        this.coordinates = AxialCoordinates.FromOffsetCoordinates(x, z);
+        this.position = AxialCoordinates.GetCenterFromAxial(coordinates);
+        this.type = type;
         neighbors = new Point[6];
         cells = new TriCell[6];
         edges = new Edge[6];
+        if (type != PointType.TopEdge) {
+            SetCell(CellDirection.N, new TriCell(this, TriOrientation.Top));
+        }
+        if (type != PointType.BottomEdge) {
+            SetCell(CellDirection.S, new TriCell(this, TriOrientation.Bottom));
+        }
     }
 
     public void Refresh() {
@@ -57,3 +69,5 @@ public class Point : MonoBehaviour
     }
     #endregion
 }
+
+public enum PointType { HorizontalEdge, TopEdge, BottomEdge, Center}

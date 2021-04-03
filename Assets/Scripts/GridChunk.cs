@@ -28,7 +28,6 @@ public class GridChunk : MonoBehaviour
 	public void AddPoint(int index, Point point) {
 		points[index] = point;
 		point.chunk = this;
-		point.transform.SetParent(transform, false);
 		point.uiRect.SetParent(gridCanvas.transform, false);
 	}
 }
