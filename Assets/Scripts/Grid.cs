@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 using UnityEngine.UI;
 
 public class Grid : MonoBehaviour
@@ -20,13 +21,23 @@ public class Grid : MonoBehaviour
 	private int cellCountZ;
 	private int cellCountX;
 
-	void Awake() {
+	private List<GameObject> vertLabels;
+	private List<GameObject> cellLabels;
 
+	private bool showVertLabels;
+
+	Canvas gridCanvas;
+
+	void Awake() {
+		gridCanvas = GetComponentInChildren<Canvas>();
+		vertLabels = new List<GameObject>();
+		cellLabels = new List<GameObject>();
+		showVertLabels = true;
 		cellCountX = chunkCountX * GridMetrics.chunkSizeX;
 		cellCountZ = chunkCountZ * GridMetrics.chunkSizeZ;
 
 		GridMesh.SetHeight(cellCountZ);
-
+		
 		CreateChunks();
 		CreatePoints();
 		InitPoints();
@@ -287,11 +298,33 @@ public class Grid : MonoBehaviour
 			}
 		}
 		// Add Text Label
-		Text label = Instantiate<Text>(cellLabelPrefab);
-		label.rectTransform.anchoredPosition =
-			new Vector2(point.position.x, point.position.y + 0.5f);
-		label.text = point.coordinates.GetPerVertexTextLabel(shouldLabelOnTriangle);
-		point.uiRect = label.rectTransform;
+		Text vertLabel = Instantiate<Text>(cellLabelPrefab);
+		vertLabel.rectTransform.anchoredPosition =
+			new Vector2(point.position.x, point.position.y);
+		vertLabel.text = point.coordinates.GetPerVertexTextLabel(shouldLabelOnTriangle);
+		vertLabels.Add(vertLabel.gameObject);
+
+		Text cellLabelNE = Instantiate<Text>(cellLabelPrefab);
+		ContinuousCellCoordinates NECoordinate = point.coordinates.GetRelativeCellCoordinates(CellDirection.NE);
+		cellLabelNE.rectTransform.anchoredPosition =
+			new Vector2(point.position.x + GridMetrics.innerRadius, point.position.y + GridMetrics.triHeight * (NECoordinate.IsPositive ? 0.3f : 0.4f));
+		cellLabelNE.color = Color.blue;
+		cellLabelNE.text = NECoordinate.ToStringOnSeparateLines();
+		cellLabels.Add(cellLabelNE.gameObject);
+
+		Text cellLabelN = Instantiate<Text>(cellLabelPrefab);
+		ContinuousCellCoordinates NCoordinate = point.coordinates.GetRelativeCellCoordinates(CellDirection.N);
+		cellLabelN.rectTransform.anchoredPosition =
+			new Vector2(point.position.x, point.position.y + GridMetrics.triHeight * (NCoordinate.IsPositive ? 0.3f : 0.4f));
+		cellLabelN.color = Color.blue;
+		cellLabelN.text = NCoordinate.ToStringOnSeparateLines();
+		cellLabels.Add(cellLabelN.gameObject);
+
+		vertLabel.rectTransform.SetParent(gridCanvas.transform, false);
+		cellLabelNE.rectTransform.SetParent(gridCanvas.transform, false);
+		cellLabelN.rectTransform.SetParent(gridCanvas.transform, false);
+		cellLabelN.gameObject.SetActive(false);
+		cellLabelNE.gameObject.SetActive(false);
 
 		AddPointToChunk(x, z, point);
 	}
@@ -310,5 +343,15 @@ public class Grid : MonoBehaviour
 
 	private int GetPointIndexFromCoordinate(VertexCoordinates coordinates) {
 		return coordinates.X + coordinates.Z * cellCountX + coordinates.Z / 2;
+	}
+
+	public void ToggleLabels() {
+		showVertLabels = !showVertLabels;
+		foreach (GameObject label in cellLabels) {
+			label.SetActive(!showVertLabels);
+        }
+		foreach (GameObject label in vertLabels) {
+			label.SetActive(showVertLabels);
+		}
 	}
 }

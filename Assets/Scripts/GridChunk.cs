@@ -7,10 +7,8 @@ public class GridChunk : MonoBehaviour
 	Point[] points;
 
 	GridMesh hexMesh;
-	Canvas gridCanvas;
 
 	void Awake() {
-		gridCanvas = GetComponentInChildren<Canvas>();
 		hexMesh = GetComponentInChildren<GridMesh>();
 
 		points = new Point[GridMetrics.chunkSizeX * GridMetrics.chunkSizeZ];
@@ -28,6 +26,5 @@ public class GridChunk : MonoBehaviour
 	public void AddPoint(int index, Point point) {
 		points[index] = point;
 		point.chunk = this;
-		point.uiRect.SetParent(gridCanvas.transform, false);
 	}
 }

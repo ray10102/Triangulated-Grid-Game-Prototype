@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-public struct CellCoordinates
+public struct ContinuousCellCoordinates
 {
 	public int X {
 		get;
@@ -23,13 +23,13 @@ public struct CellCoordinates
 		}
 	}
 
-	public CellCoordinates(int x, int y, int z) {
+	public ContinuousCellCoordinates(int x, int y, int z) {
 		X = x;
 		Y = y;
 		Z = z;
     }
 
-	public CellCoordinates(VertexCoordinates vert, CellDirection dir) {
+	public ContinuousCellCoordinates(VertexCoordinates vert, CellDirection dir) {
 		X = vert.X;
 		Y = vert.Y;
 		Z = vert.Z;
@@ -55,7 +55,7 @@ public struct CellCoordinates
 		}
 	}
 
-	public CellCoordinates(VertexCoordinates v1, VertexCoordinates v2, VertexCoordinates v3) {
+	public ContinuousCellCoordinates(VertexCoordinates v1, VertexCoordinates v2, VertexCoordinates v3) {
 		if (v1.X == v2.X) {
 			X = v1.X;
         } else if (v2.X == v3.X) {
@@ -87,22 +87,31 @@ public struct CellCoordinates
 		}
 	}
 
+	public static int ManhattanDistance(ContinuousCellCoordinates first, ContinuousCellCoordinates second) {
+		return first.ManhattanDistanceTo(second);
+    }
+
+	public int ManhattanDistanceTo(ContinuousCellCoordinates other) {
+		throw new NotImplementedException();
+		return Mathf.Abs(X - other.X) + Mathf.Abs(Y - other.Y) + Mathf.Abs(Z - other.Z);
+	}
+
 	#region Static Coordinate System Converters
-	public static CellCoordinates FromOffsetCoordinates(int x, int z) {
+	public static ContinuousCellCoordinates FromOffsetCoordinates(int x, int z) {
 		throw new NotImplementedException();
 	}
 
-	public static CellCoordinates FromPosition(Vector3 position) {
+	public static ContinuousCellCoordinates FromPosition(Vector3 position) {
 		throw new NotImplementedException();
 	}
 	#endregion
 
 	#region GetRelativeCoordinates
-	public CellCoordinates GetRelativeCoordinates(Vector3 relativePosition) {
-		return new CellCoordinates(X + (int)relativePosition.x, Y + (int)relativePosition.y, Z + (int)relativePosition.z);
+	public ContinuousCellCoordinates GetRelativeCoordinates(Vector3 relativePosition) {
+		return new ContinuousCellCoordinates(X + (int)relativePosition.x, Y + (int)relativePosition.y, Z + (int)relativePosition.z);
 	}
 
-	public CellCoordinates GetRelativeCoordinates(CellDirection direction) {
+	public ContinuousCellCoordinates GetRelativeCoordinates(CellDirection direction) {
 		switch (direction) {
 			case CellDirection.NE:
 				return GetUpperRight();
@@ -121,26 +130,26 @@ public struct CellCoordinates
 		}
 	}
 
-	public CellCoordinates GetUpperRight() {
+	public ContinuousCellCoordinates GetUpperRight() {
 		return GetRelativeCoordinates(new Vector3(0, -1, -1));
 	}
 
-	public CellCoordinates GetUpperLeft() {
+	public ContinuousCellCoordinates GetUpperLeft() {
 		return GetRelativeCoordinates(new Vector3(-1, -1, 0));
 	}
-	public CellCoordinates GetUpper() {
+	public ContinuousCellCoordinates GetUpper() {
 		return GetRelativeCoordinates(new Vector3(1, 0, 1));
 	}
 
-	public CellCoordinates GetLower() {
+	public ContinuousCellCoordinates GetLower() {
 		return GetRelativeCoordinates(new Vector3(-1, 0, -1));
 	}
 
-	public CellCoordinates GetLowerRight() {
+	public ContinuousCellCoordinates GetLowerRight() {
 		return GetRelativeCoordinates(new Vector3(1, 1, 0));
 	}
 
-	public CellCoordinates GetLowerLeft() {
+	public ContinuousCellCoordinates GetLowerLeft() {
 		return GetRelativeCoordinates(new Vector3(0, 1, 1));
 	}
 	#endregion
@@ -152,16 +161,9 @@ public struct CellCoordinates
 	}
 
 	/// <param name="printPerTriangle">Whether the text label should display over the vertex or twice per triangle.</param>
-	public string GetPerVertexTextLabel(bool printPerTriangle) {
-		string result = X.ToString() + "\n" + Y.ToString() + "\n" + Z.ToString();
-		if (printPerTriangle) {
-			result = result + "\n\n" + result;
-		}
-		return result;
-	}
-
 	public string ToStringOnSeparateLines() {
-		return X.ToString() + "\n" + Z.ToString();
+		string result = X.ToString() + "\n" + Y.ToString() + "\n" + Z.ToString();
+		return result;
 	}
 	#endregion
 }

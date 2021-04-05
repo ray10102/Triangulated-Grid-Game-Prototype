@@ -17,12 +17,12 @@ public class TriCell
 	private Point point;
     private TriType type;
 
-	public CellCoordinates coordinates {
+	public ContinuousCellCoordinates coordinates {
 		get;
 		private set;
 	}
 
-	public TriCell(Point point, CellCoordinates coordinates) {
+	public TriCell(Point point, ContinuousCellCoordinates coordinates) {
         this.point = point;
 		this.coordinates = coordinates;
 		corners = new CellCorner[3];

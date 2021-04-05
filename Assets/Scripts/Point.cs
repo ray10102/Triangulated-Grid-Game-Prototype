@@ -13,8 +13,6 @@ public class Point
     public TriCell[] cells;
     public TriCell[] ceilingCells;
     public GridChunk chunk;
-    // Label
-    public RectTransform uiRect;
 
     private Point[] neighbors;
     private Edge[] edges;
@@ -26,6 +24,7 @@ public class Point
         neighbors = new Point[6];
         cells = new TriCell[6];
         edges = new Edge[6];
+        // TODO this does not belong to the point, should move elsewhere
         if (type != PointType.TopEdge) {
             SetCell(CellDirection.N, new TriCell(this, coordinates.GetRelativeCellCoordinates(CellDirection.N)));
         }

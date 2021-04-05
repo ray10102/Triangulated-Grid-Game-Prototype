@@ -76,8 +76,8 @@ public struct VertexCoordinates
 	}
 	#endregion
 
-	public CellCoordinates GetRelativeCellCoordinates(CellDirection dir) {
-		return new CellCoordinates(this, dir);
+	public ContinuousCellCoordinates GetRelativeCellCoordinates(CellDirection dir) {
+		return new ContinuousCellCoordinates(this, dir);
     }
 
 	#region GetRelativeCoordinates
