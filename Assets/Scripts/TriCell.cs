@@ -6,25 +6,25 @@ using System;
 /// </summary>
 public class TriCell
 {
-    public TriOrientation orientation;
 	// Counter clockwise corners starting from center
 	public CellCorner[] corners;
 	public Vector2 centerXZ {
 		get {
-			return point.position + (orientation == TriOrientation.Top ? 1 : -1) * Vector2.up * GridMetrics.outerRadius;
+			return point.position + (coordinates.IsPositive ? -1 : 1) * Vector2.up * GridMetrics.outerRadius;
         }
     }
 
 	private Point point;
     private TriType type;
 
-	public AxialCoordinates coordinates {
-		get { return point.coordinates; }
+	public CellCoordinates coordinates {
+		get;
+		private set;
 	}
 
-	public TriCell(Point point, TriOrientation orientation) {
+	public TriCell(Point point, CellCoordinates coordinates) {
         this.point = point;
-        this.orientation = orientation;
+		this.coordinates = coordinates;
 		corners = new CellCorner[3];
 		for (int i = 0; i < 3; i++) {
 			corners[i] = new CellCorner(this, i);
@@ -41,7 +41,7 @@ public class TriCell
 			c2 = temp;
         }
 
-		if (orientation == TriOrientation.Top) {
+		if (!coordinates.IsPositive) {
 			if (c2 == 1) { // c1 must be 0
 				return point.GetEdge(EdgeDirection.NW);
 			} else if (c1 == 1 && c2 == 2) {
@@ -74,9 +74,9 @@ public class TriCell
 
 	// Untested
 	public TriCell GetNeighbor(CellDirection direction) {
-		if ((orientation == TriOrientation.Top &&
+		if ((!coordinates.IsPositive &&
 			(direction == CellDirection.N || direction == CellDirection.SE || direction == CellDirection.SW)) || 
-			(orientation == TriOrientation.Bottom &&
+			(coordinates.IsPositive &&
 			(direction == CellDirection.S || direction == CellDirection.NE || direction == CellDirection.NW))) {
 				return GetNeighborHelper(direction);
 		} else {
@@ -89,13 +89,13 @@ public class TriCell
 		if (index == 0) {
 			return point;
         } else if (index == 1) {
-			if (orientation == TriOrientation.Top) {
+			if (!coordinates.IsPositive) {
 				return point.GetNeighbor(EdgeDirection.NW);
             } else {
 				return point.GetNeighbor(EdgeDirection.SE);
             }
         } else if (index == 2) {
-			if (orientation == TriOrientation.Top) {
+			if (!coordinates.IsPositive) {
 				return point.GetNeighbor(EdgeDirection.NE);
 			} else {
 				return point.GetNeighbor(EdgeDirection.SW);
@@ -153,7 +153,7 @@ public class TriCell
 	private void Refresh() {
 		point.Refresh();
 		// Update the neighboring points that render affected edges
-		if (orientation == TriOrientation.Top) {
+		if (!coordinates.IsPositive) {
 			Point NW = point.GetNeighbor(EdgeDirection.NW);
 			if (NW != null) {
 				NW.Refresh();
@@ -266,5 +266,3 @@ public class TriCell
 		}
 	}
 }
-
-public enum TriOrientation { Top, Bottom }

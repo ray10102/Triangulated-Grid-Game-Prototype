@@ -2,7 +2,7 @@
 using UnityEngine;
 
 [System.Serializable]
-public struct AxialCoordinates
+public struct VertexCoordinates
 {
 	public int X {
 		get {
@@ -20,9 +20,6 @@ public struct AxialCoordinates
 		}
 	}
 
-	public Vector2 UpperCoordinates2D { get; private set; }
-	public Vector2 LowerCoordinates2D { get; private set; }
-
 	[SerializeField]
 	private int x, z;
 
@@ -33,20 +30,18 @@ public struct AxialCoordinates
 		}
 	}
 
-	public AxialCoordinates(int x, int z) {
+	public VertexCoordinates(int x, int z) {
 		bool isOdd = z % 2 == 1;
 		this.x = x;
 		this.z = z;
-		UpperCoordinates2D = new Vector2(isOdd ? x * 2 + 1 : x * 2, z + 1);
-		LowerCoordinates2D = new Vector2(isOdd ? x * 2 + 1 : x * 2, z);
 	}
 
 	#region Static Coordinate System Converters
-	public static AxialCoordinates FromOffsetCoordinates(int x, int z) {
-		return new AxialCoordinates(x - z / 2, z);
+	public static VertexCoordinates FromOffsetCoordinates(int x, int z) {
+		return new VertexCoordinates(x - z / 2, z);
 	}
 
-	public static AxialCoordinates FromPosition(Vector3 position) {
+	public static VertexCoordinates FromPosition(Vector3 position) {
 		float x = position.x / (GridMetrics.innerRadius * 2f);
 		float y = -x;
 
@@ -70,10 +65,10 @@ public struct AxialCoordinates
 			}
 		}
 
-		return new AxialCoordinates(iX, iZ);
+		return new VertexCoordinates(iX, iZ);
 	}
 
-	public static Vector2 GetCenterFromAxial(AxialCoordinates coordinates) {
+	public static Vector2 GetPos2DFromVertex(VertexCoordinates coordinates) {
 		Vector2 position;
 		position.x = (coordinates.X + coordinates.Z * 0.5f) * (GridMetrics.innerRadius * 2f);
 		position.y = coordinates.Z * (GridMetrics.outerRadius * 1.5f);
@@ -81,12 +76,16 @@ public struct AxialCoordinates
 	}
 	#endregion
 
+	public CellCoordinates GetRelativeCellCoordinates(CellDirection dir) {
+		return new CellCoordinates(this, dir);
+    }
+
 	#region GetRelativeCoordinates
-	public AxialCoordinates GetRelativeCoordinates(Vector3 relativePosition) {
-		return new AxialCoordinates(this.x + (int)relativePosition.y + (int)relativePosition.z, this.z + (int)relativePosition.x - (int)relativePosition.y);
+	public VertexCoordinates GetRelativeCoordinates(Vector3 relativePosition) {
+		return new VertexCoordinates(this.x + (int)relativePosition.y + (int)relativePosition.z, this.z + (int)relativePosition.x - (int)relativePosition.y);
 	}
 
-	public AxialCoordinates GetRelativeCoordinates(EdgeDirection direction) {
+	public VertexCoordinates GetRelativeCoordinates(EdgeDirection direction) {
 		switch (direction) {
 			case EdgeDirection.NE:
 				return GetUpperRight();
@@ -105,34 +104,31 @@ public struct AxialCoordinates
 		}
     }
 
-    public AxialCoordinates GetUpperRight() {
+    public VertexCoordinates GetUpperRight() {
 		return GetRelativeCoordinates(new Vector3(1, 0, 0));
 	}
 
-	public AxialCoordinates GetUpperLeft() {
+	public VertexCoordinates GetUpperLeft() {
 		return GetRelativeCoordinates(new Vector3(0, -1, 0));
 	}
-	public AxialCoordinates GetRight() {
+	public VertexCoordinates GetRight() {
 		return GetRelativeCoordinates(new Vector3(0, 0, 1));
 	}
 
-	public AxialCoordinates GetLeft() {
+	public VertexCoordinates GetLeft() {
 		return GetRelativeCoordinates(new Vector3(0, 0, -1));
 	}
 
-	public AxialCoordinates GetLowerRight() {
+	public VertexCoordinates GetLowerRight() {
 		return GetRelativeCoordinates(new Vector3(0, 1, 0));
 	}
 
-	public AxialCoordinates GetLowerLeft() {
+	public VertexCoordinates GetLowerLeft() {
 		return GetRelativeCoordinates(new Vector3(-1, 0, 0));
 	}
 	#endregion
 
     #region String Methods
-    public string GetPerTriangleTextLabel() {
-        return UpperCoordinates2D.x.ToString() + "\n" + UpperCoordinates2D.y.ToString() + "\n\n\n" + LowerCoordinates2D.x.ToString() + "\n" + LowerCoordinates2D.y.ToString();
-    }
 
 	public override string ToString() {
 		return "(" + X.ToString() + ", " + Y.ToString() + ", " + Z.ToString() + ")";

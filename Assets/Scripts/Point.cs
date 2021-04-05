@@ -9,8 +9,9 @@ public class Point
         get;
         private set;
     }
-    public AxialCoordinates coordinates;
+    public VertexCoordinates coordinates;
     public TriCell[] cells;
+    public TriCell[] ceilingCells;
     public GridChunk chunk;
     // Label
     public RectTransform uiRect;
@@ -19,17 +20,17 @@ public class Point
     private Edge[] edges;
 
     public Point(PointType type, int x, int z) {
-        this.coordinates = AxialCoordinates.FromOffsetCoordinates(x, z);
-        this.position = AxialCoordinates.GetCenterFromAxial(coordinates);
+        this.coordinates = VertexCoordinates.FromOffsetCoordinates(x, z);
+        this.position = VertexCoordinates.GetPos2DFromVertex(coordinates);
         this.type = type;
         neighbors = new Point[6];
         cells = new TriCell[6];
         edges = new Edge[6];
         if (type != PointType.TopEdge) {
-            SetCell(CellDirection.N, new TriCell(this, TriOrientation.Top));
+            SetCell(CellDirection.N, new TriCell(this, coordinates.GetRelativeCellCoordinates(CellDirection.N)));
         }
         if (type != PointType.BottomEdge) {
-            SetCell(CellDirection.S, new TriCell(this, TriOrientation.Bottom));
+            SetCell(CellDirection.S, new TriCell(this, coordinates.GetRelativeCellCoordinates(CellDirection.S)));
         }
     }
 

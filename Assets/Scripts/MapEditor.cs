@@ -93,12 +93,20 @@ public class MapEditor : MonoBehaviour
 		Ray inputRay = Camera.main.ScreenPointToRay(Input.mousePosition);
 		RaycastHit hit;
 		if (Physics.Raycast(inputRay, out hit)) {
-			switch (interactMode) {
-				case InteractMode.Edit:
-					HandleEdit(hit);
-					break;
-				case InteractMode.Inspect:
-					break;
+			Vector3 hitPoint = hit.point;
+			Ray verticalRay = new Ray(new Vector3(hit.point.x, -1f, hit.point.z), Vector3.up);
+			RaycastHit hit2;
+			if (Physics.Raycast(verticalRay, out hit2)) {
+				Debug.Log("Vertical hit");
+            }
+			if (Physics.Raycast(inputRay, out hit)) {
+				switch (interactMode) {
+					case InteractMode.Edit:
+						HandleEdit(hit);
+						break;
+					case InteractMode.Inspect:
+						break;
+				}
 			}
 		}
 	}

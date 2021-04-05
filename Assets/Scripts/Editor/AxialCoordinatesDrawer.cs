@@ -1,13 +1,13 @@
 ﻿using UnityEngine;
 using UnityEditor;
 
-[CustomPropertyDrawer(typeof(AxialCoordinates))]
+[CustomPropertyDrawer(typeof(VertexCoordinates))]
 public class AxialCoordinatesDrawer : PropertyDrawer
 {
 	public override void OnGUI(
 		Rect position, SerializedProperty property, GUIContent label
 	) {
-		AxialCoordinates coordinates = new AxialCoordinates(
+		VertexCoordinates coordinates = new VertexCoordinates(
 			property.FindPropertyRelative("x").intValue,
 			property.FindPropertyRelative("z").intValue
 		);

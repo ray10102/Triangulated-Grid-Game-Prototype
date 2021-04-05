@@ -35,13 +35,13 @@ public class Grid : MonoBehaviour
 	#region Getters
 	public Point GetPointFromPosition(Vector3 position) {
 		position = transform.InverseTransformPoint(position);
-		AxialCoordinates coordinates = AxialCoordinates.FromPosition(position);
+		VertexCoordinates coordinates = VertexCoordinates.FromPosition(position);
 		return points[GetPointIndexFromCoordinate(coordinates)];
 	}
 
 	public TriCell GetCellFromPosition(Vector3 position) {
 		Point point = GetPointFromPosition(position);
-		AxialCoordinates vert = point.coordinates;
+		VertexCoordinates vert = point.coordinates;
 		Vector2 center = point.position;
 		// y intercept of triangle edge w positive slope
 		float bPos = Util.FindIntercept2D(GridMetrics.SQRT_3, center);
@@ -79,9 +79,9 @@ public class Grid : MonoBehaviour
 			clickedCliff = true;
 		}
 		Point point = GetPointFromPosition(position);
-		AxialCoordinates vert = point.coordinates;
+		VertexCoordinates vert = point.coordinates;
 		Vector2 position2D = new Vector2(position.x, position.z);
-		Vector2 center = AxialCoordinates.GetCenterFromAxial(vert);
+		Vector2 center = VertexCoordinates.GetPos2DFromVertex(vert);
 		// y intercept of triangle edge w positive slope
 		float bPos = Util.FindIntercept2D(GridMetrics.SQRT_3, center);
 		// "" w negative slope
@@ -308,7 +308,7 @@ public class Grid : MonoBehaviour
 
 	#endregion
 
-	private int GetPointIndexFromCoordinate(AxialCoordinates coordinates) {
+	private int GetPointIndexFromCoordinate(VertexCoordinates coordinates) {
 		return coordinates.X + coordinates.Z * cellCountX + coordinates.Z / 2;
 	}
 }
