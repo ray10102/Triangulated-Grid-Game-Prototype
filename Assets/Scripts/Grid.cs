@@ -305,7 +305,7 @@ public class Grid : MonoBehaviour
 		vertLabels.Add(vertLabel.gameObject);
 
 		Text cellLabelNE = Instantiate<Text>(cellLabelPrefab);
-		ContinuousCellCoordinates NECoordinate = point.coordinates.GetRelativeCellCoordinates(CellDirection.NE);
+		AxialCellCoordinates NECoordinate = point.coordinates.GetRelativeCellCoordinates(CellDirection.NE);
 		cellLabelNE.rectTransform.anchoredPosition =
 			new Vector2(point.position.x + GridMetrics.innerRadius, point.position.y + GridMetrics.triHeight * (NECoordinate.IsPositive ? 0.3f : 0.4f));
 		cellLabelNE.color = Color.blue;
@@ -313,7 +313,7 @@ public class Grid : MonoBehaviour
 		cellLabels.Add(cellLabelNE.gameObject);
 
 		Text cellLabelN = Instantiate<Text>(cellLabelPrefab);
-		ContinuousCellCoordinates NCoordinate = point.coordinates.GetRelativeCellCoordinates(CellDirection.N);
+		AxialCellCoordinates NCoordinate = point.coordinates.GetRelativeCellCoordinates(CellDirection.N);
 		cellLabelN.rectTransform.anchoredPosition =
 			new Vector2(point.position.x, point.position.y + GridMetrics.triHeight * (NCoordinate.IsPositive ? 0.3f : 0.4f));
 		cellLabelN.color = Color.blue;

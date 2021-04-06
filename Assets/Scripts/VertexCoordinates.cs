@@ -31,7 +31,6 @@ public struct VertexCoordinates
 	}
 
 	public VertexCoordinates(int x, int z) {
-		bool isOdd = z % 2 == 1;
 		this.x = x;
 		this.z = z;
 	}
@@ -76,8 +75,8 @@ public struct VertexCoordinates
 	}
 	#endregion
 
-	public ContinuousCellCoordinates GetRelativeCellCoordinates(CellDirection dir) {
-		return new ContinuousCellCoordinates(this, dir);
+	public AxialCellCoordinates GetRelativeCellCoordinates(CellDirection dir) {
+		return new AxialCellCoordinates(this, dir);
     }
 
 	#region GetRelativeCoordinates
