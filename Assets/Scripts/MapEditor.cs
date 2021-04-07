@@ -2,6 +2,7 @@
 using UnityEngine.EventSystems;
 using System;
 using UnityEngine.UI;
+using System.Collections.Generic;
 
 public class MapEditor : MonoBehaviour
 {
@@ -13,8 +14,8 @@ public class MapEditor : MonoBehaviour
 	public const float POINT_RADIUS_MULTIPLIER = 0.2f;
 	public const float dragThreshold = 0.25f;
 
-	public SelectMode selectMode;
-	public InteractMode interactMode;
+	public SelectedComponent selectMode;
+	public SelectInteraction interactionMode;
 	public Color[] colors;
 	public Grid hexGrid;
 
@@ -24,6 +25,8 @@ public class MapEditor : MonoBehaviour
 
 	[SerializeField]
 	private Dropdown selectModeDropdown;
+	[SerializeField]
+	private Dropdown interactModeDropdown;
 
 	// Labels
 	[SerializeField]
@@ -48,12 +51,15 @@ public class MapEditor : MonoBehaviour
 	// if false, corners
 	private bool isMultiSelectingPoints;
 	private float clickStart;
+	private Vector3 clickStartPos;
 	private bool isClicking;
 	private bool isDragging {
 		get {
 			return isClicking && Time.time - clickStart > dragThreshold;
         }
     }
+
+	public static List<TriCell> selectedCells;
 
 	private bool isMouseOnScreen {
 		get {
@@ -68,6 +74,7 @@ public class MapEditor : MonoBehaviour
 		if (pointVsCornerButton) {
 			pointVsCornerLabel = pointVsCornerButton.GetComponentInChildren<Text>();
         }
+		selectedCells = new List<TriCell>();
 	}
 
 	void Update() {
@@ -84,21 +91,30 @@ public class MapEditor : MonoBehaviour
 			clickStart = Time.time;
 			HandleClick();
 		} else if (!Input.GetMouseButton(0)) {
-			isClicking = false;
-        }
+			if (isClicking) {
+				// End drag
+				if (isDragging) {
 
+                }
+				isClicking = false;
+			}
+        }
 	}
 
 	void HandleClick() {
 		Ray inputRay = Camera.main.ScreenPointToRay(Input.mousePosition);
 		RaycastHit hit;
 		if (Physics.Raycast(inputRay, out hit)) {
+			/* Vertical raycast to detect number of floors
+			 * Commenting out for later use
 			Vector3 hitPoint = hit.point;
 			Ray verticalRay = new Ray(new Vector3(hit.point.x, -1f, hit.point.z), Vector3.up);
 			RaycastHit hit2;
 			if (Physics.Raycast(verticalRay, out hit2)) {
 				Debug.Log("Vertical hit");
-            }
+            } */
+			clickStartPos = hit.point;
+			/*
 			if (Physics.Raycast(inputRay, out hit)) {
 				switch (interactMode) {
 					case InteractMode.Edit:
@@ -108,6 +124,7 @@ public class MapEditor : MonoBehaviour
 						break;
 				}
 			}
+			*/
 		}
 	}
 
@@ -119,22 +136,22 @@ public class MapEditor : MonoBehaviour
 
     private void HandleEdit(RaycastHit hit) {
 		switch (selectMode) {
-			case SelectMode.Tri:
+			case SelectedComponent.Tri:
 				HandleTriEdit(hexGrid.GetCellFromPosition(hit.point));
 				break;
-			case SelectMode.Hex:
+			case SelectedComponent.Hex:
 				HandleHexEdit(hexGrid.GetPointFromPosition(hit.point));
 				break;
-			case SelectMode.Point:
+			case SelectedComponent.Point:
 				HandlePointEdit(hexGrid.GetPointFromPosition(hit.point));
 				break;
-			case SelectMode.Edge:
+			case SelectedComponent.Edge:
 				HandleEdgeEdit(hit);
 				break;
-			case SelectMode.Corner:
+			case SelectedComponent.Corner:
 				HandleCornerEdit(hexGrid.GetCornerFromPosition(hit.point));
 				break;
-			case SelectMode.Multi:
+			case SelectedComponent.Multi:
 				HandleMultiEdit(hit);
 				break;
 			default:
@@ -213,6 +230,43 @@ public class MapEditor : MonoBehaviour
 		}
 	}
 
+    #endregion
+
+    #region Selection Handlers
+	
+	private void HandleLineSelect(RaycastHit hit) {
+		switch (selectMode) {
+			case SelectedComponent.Tri:
+				HandleTriLineSelect(hit.point);
+				break;
+			case SelectedComponent.Hex:
+				HandleHexLineSelect(hit.point);
+				break;
+			case SelectedComponent.Point:
+				break;
+			case SelectedComponent.Edge:
+				break;
+			case SelectedComponent.Corner:
+				break;
+			case SelectedComponent.Multi:
+				break;
+			default:
+				throw new ArgumentOutOfRangeException();
+		}
+	}
+
+	private void HandleHexLineSelect(Vector3 dragEnd) {
+
+    }
+
+	private void HandleTriLineSelect(Vector3 dragEnd) {
+		Vector2 dragDirection = Util.XZ(clickStartPos) - Util.XZ(dragEnd);
+		float angle = Vector2.SignedAngle(Vector2.up, dragDirection);
+		// 0 is down, negative left, positive right
+		int direction = (int) (angle / 30f);
+		Debug.Log(direction);
+	}
+
 	#endregion
 
 	#region Hover Handlers
@@ -221,27 +275,40 @@ public class MapEditor : MonoBehaviour
 		Ray inputRay = Camera.main.ScreenPointToRay(Input.mousePosition);
 		RaycastHit hit;
 		if (Physics.Raycast(inputRay, out hit)) {
-			switch (selectMode) {
-				case SelectMode.Tri:
-					HandleTriHover(hexGrid.GetCellFromPosition(hit.point));
-					break;
-				case SelectMode.Hex:
-					HandleHexHover(hexGrid.GetPointFromPosition(hit.point));
-					break;
-				case SelectMode.Point:
-					HandlePointHover(hexGrid.GetPointFromPosition(hit.point));
-					break;
-				case SelectMode.Edge:
-					HandleEdgeHover(hit);
-					break;
-				case SelectMode.Corner:
-					HandleCornerHover(hexGrid.GetCornerFromPosition(hit.point));
-					break;
-				case SelectMode.Multi:
-					HandleMultiHover(hit);
-					break;
-				default:
-					throw new ArgumentOutOfRangeException();
+			if (isDragging) {
+				switch (interactionMode) {
+					case SelectInteraction.Freehand:
+						
+						break;
+					case SelectInteraction.Line:
+						HandleLineSelect(hit);
+						break;
+					case SelectInteraction.Area:
+						break;
+                }
+			} else {
+				switch (selectMode) {
+					case SelectedComponent.Tri:
+						HandleTriHover(hexGrid.GetCellFromPosition(hit.point));
+						break;
+					case SelectedComponent.Hex:
+						HandleHexHover(hexGrid.GetPointFromPosition(hit.point));
+						break;
+					case SelectedComponent.Point:
+						HandlePointHover(hexGrid.GetPointFromPosition(hit.point));
+						break;
+					case SelectedComponent.Edge:
+						HandleEdgeHover(hit);
+						break;
+					case SelectedComponent.Corner:
+						HandleCornerHover(hexGrid.GetCornerFromPosition(hit.point));
+						break;
+					case SelectedComponent.Multi:
+						HandleMultiHover(hit);
+						break;
+					default:
+						throw new ArgumentOutOfRangeException();
+				}
 			}
 		}
 	}
@@ -385,25 +452,17 @@ public class MapEditor : MonoBehaviour
     #region Map editor UI handlers
 
 	public void HandleSelectModeChange() {
-		selectMode = (SelectMode)selectModeDropdown.value;
-		if (selectMode == SelectMode.Multi) {
+		selectMode = (SelectedComponent)selectModeDropdown.value;
+		if (selectMode == SelectedComponent.Multi) {
 			pointVsCornerButton.gameObject.SetActive(true);
 		} else {
 			pointVsCornerButton.gameObject.SetActive(false);
 		}
 	}
 
-	public void HandleInteractModeToggle() {
-		interactMode = (InteractMode)(((int)interactMode + 1) % 2);
-		switch (interactMode) {
-			case InteractMode.Edit:
-				toggleInteractModeLabel.text = "Edit";
-				break;
-			case InteractMode.Inspect:
-				toggleInteractModeLabel.text = "Inspect";
-				break;
-		}
-	}
+	public void HandleInteractModeChange() {
+		interactionMode = (SelectInteraction)interactModeDropdown.value;
+    }
 
 	public void HandlePointVsCornerMode() {
 		isMultiSelectingPoints = !isMultiSelectingPoints;
@@ -430,5 +489,5 @@ public class MapEditor : MonoBehaviour
     #endregion
 }
 
-public enum SelectMode { Tri, Point, Edge, Hex, Corner, Multi }
-public enum InteractMode { Edit, Inspect } 
+public enum SelectedComponent { Tri, Point, Edge, Hex, Corner, Multi }
+public enum SelectInteraction { Line, Area, Freehand }

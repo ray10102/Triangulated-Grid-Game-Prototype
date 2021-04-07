@@ -1,6 +1,8 @@
 ﻿using UnityEngine;
 /// <summary>
-///  A Point represents the 2D location of the vertex between 6 cells, the center of a hex.
+///  A Point represents a vertex of open space, that is the space betweena floor and the ceiling, or the floor and the sky. 
+///  Points represent the junction between up to six floor cells and six ceiling cells.
+///  The lack of a cell indicates a wall between neighboring cells and their respective floor/ceiling cell.
 /// </summary>
 public class Point
 {
@@ -10,10 +12,13 @@ public class Point
         private set;
     }
     public VertexCoordinates coordinates;
-    public TriCell[] cells;
-    public TriCell[] ceilingCells;
+
     public GridChunk chunk;
 
+    // Label
+    public RectTransform uiRect;
+    public TriCell[] floorCells;
+    public TriCell[] ceilingCells;
     private Point[] neighbors;
     private Edge[] edges;
 
@@ -22,7 +27,18 @@ public class Point
         this.position = VertexCoordinates.GetPos2DFromVertex(coordinates);
         this.type = type;
         neighbors = new Point[6];
-        cells = new TriCell[6];
+        floorCells = new TriCell[6];
+        ceilingCells = new TriCell[6];
+        edges = new Edge[6];
+    }
+
+    public Point(PointType type, VertexCoordinates coordinates) {
+        this.coordinates = coordinates;
+        this.position = VertexCoordinates.GetPos2DFromVertex(coordinates);
+        this.type = type;
+        neighbors = new Point[6];
+        floorCells = new TriCell[6];
+        ceilingCells = new TriCell[6];
         edges = new Edge[6];
         // TODO this does not belong to the point, should move elsewhere
         if (type != PointType.TopEdge) {
@@ -59,15 +75,20 @@ public class Point
     }
 
     public TriCell GetCell(CellDirection direction) {
-        return cells[(int)direction];
+        return floorCells[(int)direction];
     }
 
     public void SetCell(CellDirection direction, TriCell cell) {
-        cells[(int)direction] = cell;
+        floorCells[(int)direction] = cell;
         // TODO set cells for other points? idk I dont think so bc it's covered in CreateCell
         // neighbors[(int)direction].edges[(int)direction.Opposite()] = edge;
     }
     #endregion
 }
 
+/// <summary>
+/// A Horizontal Edge Point is one that lacks a N and S cell.
+/// A Top Edge Point is one that lacks a N cell.
+/// A Bottom Edge Point is one that lacks a S cell.
+/// </summary>
 public enum PointType { HorizontalEdge, TopEdge, BottomEdge, Center}

@@ -6,7 +6,7 @@ using System;
 /// </summary>
 public class TriCell
 {
-	// Counter clockwise corners starting from center
+	// Clockwise corners starting from center
 	public CellCorner[] corners;
 	public Vector2 centerXZ {
 		get {
@@ -14,8 +14,30 @@ public class TriCell
         }
     }
 
+	// Ok in hindsight I'm p sure I'll never use this but I'm not gonna delete it now
+	// TODO remove this if it never gets used
+	public float AvgY {
+		get {
+			if (dirtyElevation) {
+				RecalculateElevationValues();
+            }
+			return avgY;
+		}
+    }
+	private float avgY;
+
+	public TriType Type {
+		get {
+			if (dirtyElevation) {
+				RecalculateElevationValues();
+			}
+			return type;
+		}
+	}
+	private TriType type;
+
 	private Point point;
-    private TriType type;
+	private bool dirtyElevation;
 
 	public AxialCellCoordinates coordinates {
 		get;
@@ -29,6 +51,7 @@ public class TriCell
 		for (int i = 0; i < 3; i++) {
 			corners[i] = new CellCorner(this, i);
 		}
+		type = (TriType)int.MaxValue; // set invalid type to trigger evaluation of type
 	}
 
 	public Edge GetEdgeFromCorners(int c1, int c2) {
@@ -111,7 +134,24 @@ public class TriCell
         }
     }
 
-	private void UpdateType() {
+	/// <summary>
+	/// Marks elevation change to defer recalculation of elevation dependent values until after all elevations have been set
+	/// </summary>
+	private void DirtyElevation() {
+		dirtyElevation = true;
+    }
+
+	private void SetType(TriType value) {
+		if (value != type) {
+			type = value;
+			foreach (CellCorner corner in corners) {
+				corner.UpdateColor();
+			}
+		}
+	}
+
+	private void RecalculateElevationValues() {
+		// Type
 		int minEl = Math.Min(Math.Min(corners[0].Elevation, corners[1].Elevation), corners[2].Elevation);
 		int maxEl = Math.Max(Math.Max(corners[0].Elevation, corners[1].Elevation), corners[2].Elevation);
 		int diff = maxEl - minEl;
@@ -124,15 +164,16 @@ public class TriCell
 		} else {
             SetType(TriType.NonTraversable);
 		}
-	}
 
-	private void SetType(TriType value) {
-		if (value != type) {
-			type = value;
-			foreach (CellCorner corner in corners) {
-				corner.UpdateColor();
-			}
-		}
+		// AvgY
+		int sumY = 0;
+		for (int i = 0; i < corners.Length; i++) {
+			sumY = sumY + corners[i].Elevation;
+        }
+		avgY = sumY / 3f * GridMetrics.elevationStep;
+
+		// reset dirty elevation flag
+		dirtyElevation = false;
 	}
 
 	private TriCell GetNeighborHelper(CellDirection direction) {
@@ -185,7 +226,7 @@ public class TriCell
 					return;
 				}
 				elevation = value;
-				cell.UpdateType();
+				cell.DirtyElevation();
 				cell.Refresh();
 			}
 		}
@@ -198,6 +239,9 @@ public class TriCell
 
 		public Color Color {
 			get {
+				if (cell.dirtyElevation) {
+					cell.RecalculateElevationValues();
+                }
 				return color;
             }
 		}

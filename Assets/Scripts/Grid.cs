@@ -16,10 +16,13 @@ public class Grid : MonoBehaviour
 	public Color touchedColor = Color.magenta;
 
 	private Point[] points;
+	private GridCell[] cells;
 	private GridChunk[] chunks;
 
-	private int cellCountZ;
+	private int pointCountZ;
+	private int pointCountX;
 	private int cellCountX;
+	private int cellCountZ;
 
 	private List<GameObject> vertLabels;
 	private List<GameObject> cellLabels;
@@ -33,10 +36,14 @@ public class Grid : MonoBehaviour
 		vertLabels = new List<GameObject>();
 		cellLabels = new List<GameObject>();
 		showVertLabels = true;
-		cellCountX = chunkCountX * GridMetrics.chunkSizeX;
-		cellCountZ = chunkCountZ * GridMetrics.chunkSizeZ;
+		pointCountX = chunkCountX * GridMetrics.chunkSizeX;
+		pointCountZ = chunkCountZ * GridMetrics.chunkSizeZ;
+		cellCountX = (pointCountX - 1) * 2;
+		cellCountZ = pointCountZ - 1;
 
-		GridMesh.SetHeight(cellCountZ);
+		cells = new GridCell[cellCountX * cellCountZ];
+
+		GridMesh.SetHeight(pointCountZ);
 		
 		CreateChunks();
 		CreatePoints();
@@ -179,6 +186,7 @@ public class Grid : MonoBehaviour
 	}
 	#endregion
 
+	#region Initialization
 	private void CreateChunks() {
 		chunks = new GridChunk[chunkCountX * chunkCountZ];
 
@@ -190,12 +198,10 @@ public class Grid : MonoBehaviour
 		}
 	}
 
-	#region Initialization
-
 	private void CreatePoints() {
-		points = new Point[cellCountZ * cellCountX];
-		for (int z = 0, i = 0; z < cellCountZ; z++) {
-			for (int x = 0; x < cellCountX; x++) {
+		points = new Point[pointCountZ * pointCountX];
+		for (int z = 0, i = 0; z < pointCountZ; z++) {
+			for (int x = 0; x < pointCountX; x++) {
 				CreatePoint(x, z, i++);
 			}
 		}
@@ -208,30 +214,61 @@ public class Grid : MonoBehaviour
 	}
 
 	private void InitPoint(Point point) {
-		if (point.type != PointType.TopEdge) {
-			point.GetCell(CellDirection.N).SetElevation(0);
+		if (point.type != PointType.HorizontalEdge) {
+			if (point.type != PointType.TopEdge) {
+				point.GetCell(CellDirection.N).SetElevation(0);
+			}
+			if (point.type != PointType.BottomEdge) {
+				point.GetCell(CellDirection.S).SetElevation(0);
+			}
 		}
-		if (point.type != PointType.BottomEdge) {
-			point.GetCell(CellDirection.S).SetElevation(0);
-        }
 	}
 
 	private PointType GetPointType(int x, int z) {
-		if ((x == cellCountX - 1 && (z & 1) == 1) || // rightmost point of odd  row
+		if ((x == pointCountX - 1 && (z & 1) == 1) || // rightmost point of odd  row
 			(x == 0 && (z & 1) == 0)) { // leftmost point of even row
 			return PointType.HorizontalEdge;
         }
 		if (z == 0) {
 			return PointType.BottomEdge;
         }
-		if (z == cellCountZ - 1) {
+		if (z == pointCountZ - 1) {
 			return PointType.TopEdge;
         }
 		return PointType.Center;
 	}
 
 	private void CreatePoint(int x, int z, int i) {
-		Point point = points[i] = new Point(GetPointType(x, z), x, z);
+		PointType type = GetPointType(x, z);
+		Point point = points[i] = new Point(type, x, z);
+
+
+		// Create cells
+		if (type != PointType.HorizontalEdge) {
+			if (type != PointType.TopEdge) {
+				AxialCellCoordinates NCoordinates = point.coordinates.GetRelativeCellCoordinates(CellDirection.N);
+				TriCell NCell = new TriCell(point, NCoordinates);
+				int cellIndex = GetPointIndexFromCoordinate(NCoordinates);
+				if (cells[cellIndex] == null) { 
+					cells[cellIndex] = new GridCell(NCell);
+				} else {
+					Debug.LogWarning("SOMETHING MIGHT BE WRONG??");
+				}
+				point.SetCell(CellDirection.N, NCell);
+			}
+			if (type != PointType.BottomEdge) {
+				AxialCellCoordinates SCoordinates = point.coordinates.GetRelativeCellCoordinates(CellDirection.S);
+				TriCell SCell = new TriCell(point, SCoordinates);
+				int cellIndex = GetPointIndexFromCoordinate(SCoordinates);
+				if (cells[cellIndex] == null) {
+					cells[cellIndex] = new GridCell(SCell);
+				} else {
+					Debug.LogWarning("SOMETHING MIGHT BE WRONG??");
+				}
+				point.SetCell(CellDirection.S, SCell);
+			}
+		}
+
 		// Set neighbors and edges
 		if (x > 0) {
 			point.SetNeighbor(EdgeDirection.W, points[i - 1]);
@@ -240,7 +277,7 @@ public class Grid : MonoBehaviour
 		if (z > 0) {
 			// Treat every other row differently
 			if ((z & 1) == 0) { // Even row
-				Point SEPoint = points[i - cellCountX];
+				Point SEPoint = points[i - pointCountX];
 				point.SetNeighbor(EdgeDirection.SE, SEPoint);
 				point.SetCell(CellDirection.SE, SEPoint.GetCell(CellDirection.N));
 				SEPoint.SetCell(CellDirection.NW, point.GetCell(CellDirection.S));
@@ -257,7 +294,7 @@ public class Grid : MonoBehaviour
 								 SEPoint.GetCell(CellDirection.SW)));
 				}
 				if (x > 0) {
-					Point SWPoint = points[i - cellCountX - 1];
+					Point SWPoint = points[i - pointCountX - 1];
 					point.SetNeighbor(EdgeDirection.SW, SWPoint);
 					point.SetCell(CellDirection.SW, SWPoint.GetCell(CellDirection.N));
 					SWPoint.SetCell(CellDirection.NE, point.GetCell(CellDirection.S));
@@ -268,7 +305,7 @@ public class Grid : MonoBehaviour
 								 point.GetCell(CellDirection.S)));
 				}
 			} else { // Odd row
-				Point SWPoint = points[i - cellCountX];
+				Point SWPoint = points[i - pointCountX];
 				point.SetNeighbor(EdgeDirection.SW, SWPoint);
 				point.SetCell(CellDirection.SW, SWPoint.GetCell(CellDirection.N));
 				SWPoint.SetCell(CellDirection.NE, point.GetCell(CellDirection.S));
@@ -277,8 +314,8 @@ public class Grid : MonoBehaviour
 					new Edge(EdgeOrientation.SWNE,
 							 point.GetCell(CellDirection.SW),
 							 point.GetCell(CellDirection.S)));
-				if (x < cellCountX - 1) {
-					Point SEPoint = points[i - cellCountX + 1];
+				if (x < pointCountX - 1) {
+					Point SEPoint = points[i - pointCountX + 1];
 					point.SetNeighbor(EdgeDirection.SE, SEPoint);
 					point.SetCell(CellDirection.SE, SEPoint.GetCell(CellDirection.N));
 					SEPoint.SetCell(CellDirection.NW, point.GetCell(CellDirection.S));
@@ -342,7 +379,12 @@ public class Grid : MonoBehaviour
 	#endregion
 
 	private int GetPointIndexFromCoordinate(VertexCoordinates coordinates) {
-		return coordinates.X + coordinates.Z * cellCountX + coordinates.Z / 2;
+		return coordinates.X + coordinates.Z * pointCountX + coordinates.Z / 2;
+	}
+
+	private int GetPointIndexFromCoordinate(AxialCellCoordinates coordinates) {
+		Vector2 offset = coordinates.GetOffsetCoodinates();
+		return (int)offset.x + (int)offset.y * cellCountX;
 	}
 
 	public void ToggleLabels() {

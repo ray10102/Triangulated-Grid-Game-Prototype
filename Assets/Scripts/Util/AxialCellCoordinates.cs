@@ -76,7 +76,7 @@ public struct AxialCellCoordinates
 
 	// TODO needs testing
 	public Vector2 GetOffsetCoodinates() {
-		return new Vector2((X + Z / 2) * 2 + (IsPositive ? 0 : 1), Z);
+		return new Vector2((X + Z / 2) * 2 + (IsPositive ? 0 : 1) + (Z % 2 == 1 ? 1 : 0), Z);
     }
 
 	public UVLCellCoordinates ToUVL() {
@@ -162,6 +162,8 @@ public struct AxialCellCoordinates
 
 	/// <param name="printPerTriangle">Whether the text label should display over the vertex or twice per triangle.</param>
 	public string ToStringOnSeparateLines() {
+		Vector2 offset = GetOffsetCoodinates();
+		return offset.x.ToString() + "\n" + offset.y.ToString();
 		string result = X.ToString() + "\n" + Y.ToString() + "\n" + Z.ToString();
 		return result;
 	}

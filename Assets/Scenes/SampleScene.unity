@@ -916,11 +916,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   stickMinZoom: -180
-  stickMaxZoom: -60
+  stickMaxZoom: -30
   moveSpeedMinZoom: 400
   moveSpeedMaxZoom: 100
   swivelMinZoom: 90
-  swivelMaxZoom: 20
+  swivelMaxZoom: 60
   rotationSpeed: 180
   grid: {fileID: 899188521}
 --- !u!4 &2118773480
