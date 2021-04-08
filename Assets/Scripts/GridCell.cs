@@ -10,6 +10,7 @@ using UnityEngine;
 public class GridCell
 {
     public GridChunk chunk;
+    public AxialCellCoordinates coordinates;
     public int count {
         get {
             return cells.Count;
@@ -19,10 +20,11 @@ public class GridCell
     // A grid space will always have an odd number of cells, since no space can end in a ceiling
     private List<TriCell> cells;
 
-    public GridCell(TriCell cell) {
+    public GridCell(TriCell cell, AxialCellCoordinates coordinates) {
         cells = new List<TriCell>();
         cells.Add(cell);
         cell.gridCell = this;
+        this.coordinates = coordinates;
     }
 
     public TriCell GetCell(int index) {

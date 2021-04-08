@@ -243,7 +243,7 @@ public class Grid : MonoBehaviour
 
 	private void CreatePoint(int x, int z, int i) {
 		PointType type = GetPointType(x, z);
-		GridPoint gridPoint = points[i] = new GridPoint(new Point(type, x, z));
+		GridPoint gridPoint = points[i] = new GridPoint(new Point(type, x, z), VertexCoordinates.FromOffsetCoordinates(x, z));
 		Point point = gridPoint.GetPoint(0);
 
 		// Create cells
@@ -253,7 +253,7 @@ public class Grid : MonoBehaviour
 				TriCell NCell = new TriCell(point, NCoordinates);
 				int cellIndex = GetPointIndexFromCoordinate(NCoordinates);
 				if (cells[cellIndex] == null) { 
-					cells[cellIndex] = new GridCell(NCell);
+					cells[cellIndex] = new GridCell(NCell, NCoordinates);
 					AddCellToChunk(x, z, cells[cellIndex]);
 				} else {
 					Debug.LogWarning("SOMETHING MIGHT BE WRONG??");
@@ -265,7 +265,7 @@ public class Grid : MonoBehaviour
 				TriCell SCell = new TriCell(point, SCoordinates);
 				int cellIndex = GetPointIndexFromCoordinate(SCoordinates);
 				if (cells[cellIndex] == null) {
-					cells[cellIndex] = new GridCell(SCell);
+					cells[cellIndex] = new GridCell(SCell, SCoordinates);
 					AddCellToChunk(x, z, cells[cellIndex]);
 				} else {
 					Debug.LogWarning("SOMETHING MIGHT BE WRONG??");
@@ -379,7 +379,6 @@ public class Grid : MonoBehaviour
 		// int localZ = z - chunkZ * GridMetrics.chunkSizeZ;
 		chunk.AddCell(cell);
 	}
-
 	#endregion
 
 	private int GetPointIndexFromCoordinate(VertexCoordinates coordinates) {

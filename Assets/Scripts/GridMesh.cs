@@ -49,7 +49,7 @@ public class GridMesh : MonoBehaviour
 	private void Triangulate(TriCell cell) {
 		AddTriangle(cell);
 		AddTriangleColor(cell);
-		if (cell.coordinates.IsPositive) {
+		if (cell.IsPositive) {
 			Edge[] edges = cell.GetEdges();
 			foreach (Edge edge in edges) {
 				if (edge != null && edge.IsCliff) {

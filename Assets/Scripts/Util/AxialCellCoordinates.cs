@@ -70,9 +70,28 @@ public struct AxialCellCoordinates
 		return first.ManhattanDistanceTo(second);
 	}
 
+	public static Vector3 ComponentwiseDistance(AxialCellCoordinates first, AxialCellCoordinates second) {
+		return first.ComponentwiseDistance(second);
+    }
+
+	public static int RadialDistance(AxialCellCoordinates first, AxialCellCoordinates second) {
+		return first.RadialDistance(second);
+    }
+
 	public int ManhattanDistanceTo(AxialCellCoordinates other) {
 		return Mathf.Abs(X - other.X) + Mathf.Abs(Y - other.Y) + Mathf.Abs(Z - other.Z);
 	}
+
+	public Vector3 ComponentwiseDistance(AxialCellCoordinates other) {
+		return new Vector3(Mathf.Abs(X - other.X), Mathf.Abs(Y - other.Y), Mathf.Abs(Z - other.Z));
+    }
+
+	/// <summary>
+	/// Radial distance returns the max component of componentwise distance.
+	/// </summary>
+	public int RadialDistance(AxialCellCoordinates other) {
+		return Mathf.Max(Mathf.Max(Mathf.Abs(X - other.X), Mathf.Abs(Y - other.Y)), Mathf.Abs(Z - other.Z));
+    }
 
 	// TODO needs testing
 	public Vector2 GetOffsetCoodinates() {

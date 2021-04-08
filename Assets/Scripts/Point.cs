@@ -7,7 +7,8 @@
 public class Point
 {
     public Vector2 position;
-    public VertexCoordinates coordinates;
+    public GridPoint gridPoint;
+
     public Vector2 ElevationExtents {
         get {
             if (extentsNeedUpdate) {
@@ -16,6 +17,12 @@ public class Point
             return elevationExtents;
         }
     }
+    public VertexCoordinates coordinates {
+        get {
+            return gridPoint.coordinates;
+        }
+    }
+
     private Vector2 elevationExtents;
     private bool extentsNeedUpdate;
 
@@ -50,8 +57,7 @@ public class Point
     }
 
     public Point(PointType type, int x, int z) {
-        this.coordinates = VertexCoordinates.FromOffsetCoordinates(x, z);
-        this.position = VertexCoordinates.GetPos2DFromVertex(coordinates);
+        this.position = VertexCoordinates.GetPos2DFromVertex(VertexCoordinates.FromOffsetCoordinates(x, z));
         neighbors = new Point[6];
         floorCells = new TriCell[6];
         ceilingCells = new TriCell[6];
@@ -59,7 +65,6 @@ public class Point
     }
 
     public Point(PointType type, VertexCoordinates coordinates) {
-        this.coordinates = coordinates;
         this.position = VertexCoordinates.GetPos2DFromVertex(coordinates);
         neighbors = new Point[6];
         floorCells = new TriCell[6];

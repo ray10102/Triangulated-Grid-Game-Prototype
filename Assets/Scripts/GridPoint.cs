@@ -8,14 +8,19 @@ using UnityEngine;
 /// </summary>
 public class GridPoint
 {
-    private List<Point> points;
+    public VertexCoordinates coordinates;
+
     public PointType type {
         get;
         private set;
     }
 
-    public GridPoint(Point point) {
+    private List<Point> points;
+
+    public GridPoint(Point point, VertexCoordinates coordinates) {
+        this.coordinates = coordinates;
         points = new List<Point>();
+        point.gridPoint = this;
         points.Add(point);
     }
 

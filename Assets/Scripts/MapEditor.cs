@@ -262,9 +262,12 @@ public class MapEditor : MonoBehaviour
 	private void HandleTriLineSelect(Vector3 dragEnd) {
 		Vector2 dragDirection = Util.XZ(clickStartPos) - Util.XZ(dragEnd);
 		float angle = Vector2.SignedAngle(Vector2.up, dragDirection);
-		// 0 is down, negative left, positive right
+		// Range [-5, 5] 0 is down (+z), negative left, positive right
 		int direction = (int) (angle / 30f);
-		Debug.Log(direction);
+		TriCell startCell = hexGrid.GetCellFromPosition(clickStartPos);
+		TriCell endCell = hexGrid.GetCellFromPosition(dragEnd);
+		int distance = startCell.RadialDistanceTo(endCell);
+		Debug.Log(distance);
 	}
 
 	#endregion

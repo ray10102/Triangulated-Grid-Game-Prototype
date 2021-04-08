@@ -12,7 +12,17 @@ public class TriCell
 	public CellCorner[] corners;
 	public Vector2 centerXZ {
 		get {
-			return points[0].position + (coordinates.IsPositive ? -1 : 1) * Vector2.up * GridMetrics.outerRadius;
+			return points[0].position + (IsPositive ? -1 : 1) * Vector2.up * GridMetrics.outerRadius;
+        }
+    }
+	public AxialCellCoordinates coordinates {
+		get {
+			return gridCell.coordinates;
+		}
+    }
+	public bool IsPositive {
+		get {
+			return gridCell.coordinates.IsPositive;
         }
     }
 
@@ -38,21 +48,16 @@ public class TriCell
 	}
 	private TriType type;
 
-	private Point[] points;
 	private bool dirtyElevation;
+
+	private Point[] points;
 	private TriCell[] neighbors;
 	private Edge[] edges;
-
-	public AxialCellCoordinates coordinates {
-		get;
-		private set;
-	}
 
 	public TriCell(Point point, AxialCellCoordinates coordinates) {
         points = new Point[3];
 		neighbors = new TriCell[3];
 		edges = new Edge[3];
-		this.coordinates = coordinates;
 		corners = new CellCorner[3];
 		for (int i = 0; i < 3; i++) {
 			corners[i] = new CellCorner(this, i);
@@ -89,7 +94,7 @@ public class TriCell
     }
 
 	public Edge[] GetEdges() {
-		if (coordinates.IsPositive) {
+		if (IsPositive) {
 			edges[0] = GetEdgeBetween(CellDirection.S);
 			edges[1] = GetEdgeBetween(CellDirection.NW);
 			edges[2] = GetEdgeBetween(CellDirection.NE);
@@ -147,7 +152,7 @@ public class TriCell
 	// Untested
 	public TriCell GetNeighbor(CellDirection direction) {
 		if (ValidateCellDirection(direction)) {
-				return GetNeighborHelper(direction);
+			return GetNeighborHelper(direction);
 		} else {
 			throw new ArgumentException();
 		}
@@ -155,7 +160,7 @@ public class TriCell
 
 	public TriCell[] GetNeighbors() {
 		// TODO: don't recalculate every time, do it when neighbors change.
-		if (coordinates.IsPositive) {
+		if (IsPositive) {
 			neighbors[0] = GetNeighbor(CellDirection.S);
 			neighbors[1] = GetNeighbor(CellDirection.NW);
 			neighbors[2] = GetNeighbor(CellDirection.NE);
@@ -223,10 +228,33 @@ public class TriCell
 
     #endregion
 
-    /// <summary>
-    /// Marks elevation change to defer recalculation of elevation dependent values until after all elevations have been set
-    /// </summary>
-    private void DirtyElevation() {
+    #region Util
+	/// <summary>
+	/// Returns the XZ manhattan distance to the other cell's cordinates
+	/// </summary>
+	public int ManhattanDistanceTo(TriCell other) {
+		return coordinates.ManhattanDistanceTo(other.gridCell.coordinates);
+    }
+
+	/// <summary>
+	/// Returns the XZ componentwise distance to the other cell's cordinates
+	/// </summary>
+	public Vector3 ComponentwiseDistanceTo(TriCell other) {
+		return coordinates.ComponentwiseDistance(other.gridCell.coordinates);
+	}
+
+	/// <summary>
+	/// Returns the XZ radial distance to the other cell's cordinates
+	/// </summary>
+	public int RadialDistanceTo(TriCell other) {
+		return coordinates.RadialDistance(other.gridCell.coordinates);
+	}
+	#endregion
+
+	/// <summary>
+	/// Marks elevation change to defer recalculation of elevation dependent values until after all elevations have been set
+	/// </summary>
+	private void DirtyElevation() {
 		dirtyElevation = true;
     }
 
@@ -275,7 +303,7 @@ public class TriCell
 	private void Refresh() {
 		gridCell.chunk.Refresh();
 		// Update the neighboring points that render affected edges
-		if (!coordinates.IsPositive) { // Positive cells handle cliff triangulation
+		if (!IsPositive) { // Positive cells handle cliff triangulation
 			TriCell[] neighbors = GetNeighbors();
 			foreach (TriCell neighbor in neighbors) {
 				if (neighbor != null) {
@@ -286,15 +314,15 @@ public class TriCell
 	}
 
 	private bool ValidateCellDirection(CellDirection direction) {
-		return ((!coordinates.IsPositive &&
+		return ((!IsPositive &&
 			(direction == CellDirection.N || direction == CellDirection.SE || direction == CellDirection.SW)) ||
-			(coordinates.IsPositive &&
+			(IsPositive &&
 			(direction == CellDirection.S || direction == CellDirection.NE || direction == CellDirection.NW)));
 	}
 	private bool ValidateCornerDirection(CellDirection direction) {
-		return ((coordinates.IsPositive &&
+		return ((IsPositive &&
 			(direction == CellDirection.N || direction == CellDirection.SE || direction == CellDirection.SW)) ||
-			(!coordinates.IsPositive &&
+			(!IsPositive &&
 			(direction == CellDirection.S || direction == CellDirection.NE || direction == CellDirection.NW)));
 	}
 
@@ -322,13 +350,11 @@ public class TriCell
 				cell.Refresh();
 			}
 		}
-
 		public Vector3 Position {
 			get {
 				return Util.ToVec3(cell.GetPoint(index).position) + Util.ElevationToVec3(Elevation);
             }
         }
-
 		public Color Color {
 			get {
 				if (cell.dirtyElevation) {
@@ -337,7 +363,6 @@ public class TriCell
 				return color;
             }
 		}
-
 		public CellCorner PrevCorner {
 			get { return prevCorner; }
 			private set { 
@@ -347,7 +372,6 @@ public class TriCell
 				}
 			}
 		}
-
 		public CellCorner NextCorner {
 			get { return nextCorner;  }
 			private set { 
@@ -357,7 +381,6 @@ public class TriCell
 				}
 			}
 		}
-
 		public CellCorner(TriCell cell, int index) {
 			this.cell = cell;
 			this.index = index;
