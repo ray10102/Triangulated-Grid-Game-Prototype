@@ -25,24 +25,88 @@ public class GridMesh : MonoBehaviour
 		GridMesh.height = height;
 	}
 
-	public void Triangulate(Point[] points) {
+	public void Triangulate(IEnumerable<GridCell> cells) {
 		hexMesh.Clear();
 		vertices.Clear();
 		triangles.Clear();
 		colors.Clear();
-		for (int i = 0; i < points.Length; i++) {
-			Triangulate(points[i]);
-		}
+		foreach(GridCell cell in cells) {
+			Triangulate(cell);
+        }
 		hexMesh.vertices = vertices.ToArray();
 		hexMesh.triangles = triangles.ToArray();
 		hexMesh.colors = colors.ToArray();
 		hexMesh.RecalculateNormals();
-
 		meshCollider.sharedMesh = hexMesh;
 	}
 
+	private void Triangulate(GridCell cell) {
+		for (int i = 0; i < cell.count; i++) {
+			Triangulate(cell.GetCell(i));
+        }
+    }
+
+	private void Triangulate(TriCell cell) {
+		AddTriangle(cell);
+		AddTriangleColor(cell);
+		if (cell.coordinates.IsPositive) {
+			Edge[] edges = cell.GetEdges();
+			foreach (Edge edge in edges) {
+				if (edge != null && edge.IsCliff) {
+					if (edge.Corners[0].Elevation != edge.Corners[2].Elevation) {
+						if (edge.Corners[1].Elevation != edge.Corners[3].Elevation) {
+							// Both vertices different
+							// Vertex order depends on which side is lower.
+							if (edge.Corners[0].Elevation < edge.Corners[2].Elevation) {
+								// Top tri lower
+								AddTriangle(edge, 0, 2, 1);
+								AddTriangleColor(GridMetrics.colors[(int)TriType.Cliff]);
+								AddTriangle(edge, 1, 2, 3);
+								AddTriangleColor(GridMetrics.colors[(int)TriType.Cliff]);
+							} else {
+								// Top tri higher
+								AddTriangle(edge, 1, 0, 2);
+								AddTriangleColor(GridMetrics.colors[(int)TriType.Cliff]);
+								AddTriangle(edge, 2, 3, 1);
+								AddTriangleColor(GridMetrics.colors[(int)TriType.Cliff]);
+							}
+						} else {
+							if (edge.Corners[0].Elevation < edge.Corners[2].Elevation) { // tri facing top cell
+								AddTriangle(edge, 1, 0 , 2);
+								AddTriangleColor(GridMetrics.colors[(int)TriType.Cliff]);
+							} else { // tri facing bottom cell
+								AddTriangle(edge, 1, 0, 2);
+								AddTriangleColor(GridMetrics.colors[(int)TriType.Cliff]);
+							}
+						}
+					} else if (edge.Corners[1].Elevation != edge.Corners[3].Elevation) { // Only center vertex different
+						if (edge.Corners[1].Elevation < edge.Corners[3].Elevation) { // tri facing top cell
+							AddTriangle(edge, 1, 0, 3);
+							AddTriangleColor(GridMetrics.colors[(int)TriType.Cliff]);
+						} else { // tri facing bottom cell
+							AddTriangle(edge, 1, 0, 3);
+							AddTriangleColor(GridMetrics.colors[(int)TriType.Cliff]);
+						}
+					}
+				}
+			}
+        }
+    }
+
+	/// <summary>
+	/// Triangulates top and bottom tris and NE, E, and SE edge cliffs for each point (if applicable).
+	/// Deprecated. replacing with triangulation per cell, which is much more readable and requires far fewer checks on whether each cell needs to exist.
+	/// </summary>
+	/// <param name="point"></param>
 	private void Triangulate(Point point) {
+		throw new NotImplementedException("Triangulate based on cells instead of points pls");
 		Vector3 center = Util.ToVec3(point.position);
+
+		
+
+		/* Point type is now held in GridPoint
+		 * I'm commenting this out so the code still compiles without deleting the code entirely.
+		 * 
 		if (point.type != PointType.HorizontalEdge) {
 			if (point.type != PointType.TopEdge) { // Top Triangle
 				AddTriangle(center + Util.ElevationToVec3(point.GetCell(CellDirection.N).corners[0].Elevation),
@@ -57,6 +121,7 @@ public class GridMesh : MonoBehaviour
 				AddTriangleColor(point.GetCell(CellDirection.S));
 			}
 		}
+		*/
 
 		// Triangulate cliffs
 		foreach (EdgeOrientation direction in (EdgeOrientation[])Enum.GetValues(typeof(EdgeOrientation))) {
@@ -124,6 +189,17 @@ public class GridMesh : MonoBehaviour
 			}
 		}
 	}
+
+	private void AddTriangle(TriCell cell) {
+		AddTriangle(cell.corners[0].Position, cell.corners[1].Position, cell.corners[2].Position);
+    }
+
+	private void AddTriangle(Edge edge, int c1, int c2, int c3) {
+		AddTriangle(
+			edge.Corners[c1].Position,
+			edge.Corners[c2].Position,
+			edge.Corners[c3].Position);
+    }
 
 	private void AddTriangle(Vector3 v1, Vector3 v2, Vector3 v3) {
 		int vertexIndex = vertices.Count;

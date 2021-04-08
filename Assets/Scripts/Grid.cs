@@ -15,7 +15,7 @@ public class Grid : MonoBehaviour
 	public Color defaultColor = Color.white;
 	public Color touchedColor = Color.magenta;
 
-	private Point[] points;
+	private GridPoint[] points;
 	private GridCell[] cells;
 	private GridChunk[] chunks;
 
@@ -47,11 +47,16 @@ public class Grid : MonoBehaviour
 		
 		CreateChunks();
 		CreatePoints();
-		InitPoints();
+		InitCells();
 	}
 
 	#region Getters
 	public Point GetPointFromPosition(Vector3 position) {
+		GridPoint point = GetGridPointFromPosition(position);
+		return point.GetPointAtY(position.y);
+	}
+
+	public GridPoint GetGridPointFromPosition(Vector3 position) {
 		position = transform.InverseTransformPoint(position);
 		VertexCoordinates coordinates = VertexCoordinates.FromPosition(position);
 		return points[GetPointIndexFromCoordinate(coordinates)];
@@ -199,7 +204,7 @@ public class Grid : MonoBehaviour
 	}
 
 	private void CreatePoints() {
-		points = new Point[pointCountZ * pointCountX];
+		points = new GridPoint[pointCountZ * pointCountX];
 		for (int z = 0, i = 0; z < pointCountZ; z++) {
 			for (int x = 0; x < pointCountX; x++) {
 				CreatePoint(x, z, i++);
@@ -207,21 +212,19 @@ public class Grid : MonoBehaviour
 		}
 	}
 
-	private void InitPoints() {
-		for (int i = 0; i < points.Length; i++) {
-			InitPoint(points[i]);
+	private void InitCells() {
+		for (int i = 0; i < cells.Length; i++) {
+			InitCell(cells[i]);
 		}
 	}
 
-	private void InitPoint(Point point) {
-		if (point.type != PointType.HorizontalEdge) {
-			if (point.type != PointType.TopEdge) {
-				point.GetCell(CellDirection.N).SetElevation(0);
-			}
-			if (point.type != PointType.BottomEdge) {
-				point.GetCell(CellDirection.S).SetElevation(0);
-			}
-		}
+	private void InitCell(GridCell cell) {
+		// Right now, initializes points with 0 elevation. Later, should init w actual values
+		if (cell != null) {
+			cell.GetCell(0).SetElevation(0);
+        } else {
+			Debug.LogWarning("cell is null");
+        }
 	}
 
 	private PointType GetPointType(int x, int z) {
@@ -240,8 +243,8 @@ public class Grid : MonoBehaviour
 
 	private void CreatePoint(int x, int z, int i) {
 		PointType type = GetPointType(x, z);
-		Point point = points[i] = new Point(type, x, z);
-
+		GridPoint gridPoint = points[i] = new GridPoint(new Point(type, x, z));
+		Point point = gridPoint.GetPoint(0);
 
 		// Create cells
 		if (type != PointType.HorizontalEdge) {
@@ -251,6 +254,7 @@ public class Grid : MonoBehaviour
 				int cellIndex = GetPointIndexFromCoordinate(NCoordinates);
 				if (cells[cellIndex] == null) { 
 					cells[cellIndex] = new GridCell(NCell);
+					AddCellToChunk(x, z, cells[cellIndex]);
 				} else {
 					Debug.LogWarning("SOMETHING MIGHT BE WRONG??");
 				}
@@ -262,6 +266,7 @@ public class Grid : MonoBehaviour
 				int cellIndex = GetPointIndexFromCoordinate(SCoordinates);
 				if (cells[cellIndex] == null) {
 					cells[cellIndex] = new GridCell(SCell);
+					AddCellToChunk(x, z, cells[cellIndex]);
 				} else {
 					Debug.LogWarning("SOMETHING MIGHT BE WRONG??");
 				}
@@ -270,14 +275,15 @@ public class Grid : MonoBehaviour
 		}
 
 		// Set neighbors and edges
+		// This is quite possibly overcomplicated. Due for a refactoring.
 		if (x > 0) {
-			point.SetNeighbor(EdgeDirection.W, points[i - 1]);
+			point.SetNeighbor(EdgeDirection.W, points[i - 1].GetPoint(0));
 			// Can't set EW edge yet because those points' cells aren't initialized yet.
 		}
 		if (z > 0) {
 			// Treat every other row differently
 			if ((z & 1) == 0) { // Even row
-				Point SEPoint = points[i - pointCountX];
+				Point SEPoint = points[i - pointCountX].GetPoint(0);
 				point.SetNeighbor(EdgeDirection.SE, SEPoint);
 				point.SetCell(CellDirection.SE, SEPoint.GetCell(CellDirection.N));
 				SEPoint.SetCell(CellDirection.NW, point.GetCell(CellDirection.S));
@@ -294,7 +300,7 @@ public class Grid : MonoBehaviour
 								 SEPoint.GetCell(CellDirection.SW)));
 				}
 				if (x > 0) {
-					Point SWPoint = points[i - pointCountX - 1];
+					Point SWPoint = points[i - pointCountX - 1].GetPoint(0);
 					point.SetNeighbor(EdgeDirection.SW, SWPoint);
 					point.SetCell(CellDirection.SW, SWPoint.GetCell(CellDirection.N));
 					SWPoint.SetCell(CellDirection.NE, point.GetCell(CellDirection.S));
@@ -305,7 +311,7 @@ public class Grid : MonoBehaviour
 								 point.GetCell(CellDirection.S)));
 				}
 			} else { // Odd row
-				Point SWPoint = points[i - pointCountX];
+				Point SWPoint = points[i - pointCountX].GetPoint(0);
 				point.SetNeighbor(EdgeDirection.SW, SWPoint);
 				point.SetCell(CellDirection.SW, SWPoint.GetCell(CellDirection.N));
 				SWPoint.SetCell(CellDirection.NE, point.GetCell(CellDirection.S));
@@ -315,7 +321,7 @@ public class Grid : MonoBehaviour
 							 point.GetCell(CellDirection.SW),
 							 point.GetCell(CellDirection.S)));
 				if (x < pointCountX - 1) {
-					Point SEPoint = points[i - pointCountX + 1];
+					Point SEPoint = points[i - pointCountX + 1].GetPoint(0);
 					point.SetNeighbor(EdgeDirection.SE, SEPoint);
 					point.SetCell(CellDirection.SE, SEPoint.GetCell(CellDirection.N));
 					SEPoint.SetCell(CellDirection.NW, point.GetCell(CellDirection.S));
@@ -362,18 +368,16 @@ public class Grid : MonoBehaviour
 		cellLabelN.rectTransform.SetParent(gridCanvas.transform, false);
 		cellLabelN.gameObject.SetActive(false);
 		cellLabelNE.gameObject.SetActive(false);
-
-		AddPointToChunk(x, z, point);
 	}
 
-	private void AddPointToChunk(int x, int z, Point point) {
+	private void AddCellToChunk(int x, int z, GridCell cell) {
 		int chunkX = x / GridMetrics.chunkSizeX;
 		int chunkZ = z / GridMetrics.chunkSizeZ;
 		GridChunk chunk = chunks[chunkX + chunkZ * chunkCountX];
 
-		int localX = x - chunkX * GridMetrics.chunkSizeX;
-		int localZ = z - chunkZ * GridMetrics.chunkSizeZ;
-		chunk.AddPoint(localX + localZ * GridMetrics.chunkSizeX, point);
+		// int localX = x - chunkX * GridMetrics.chunkSizeX;
+		// int localZ = z - chunkZ * GridMetrics.chunkSizeZ;
+		chunk.AddCell(cell);
 	}
 
 	#endregion

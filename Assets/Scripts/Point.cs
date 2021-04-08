@@ -7,13 +7,17 @@
 public class Point
 {
     public Vector2 position;
-    public PointType type {
-        get;
-        private set;
-    }
     public VertexCoordinates coordinates;
-
-    public GridChunk chunk;
+    public Vector2 ElevationExtents {
+        get {
+            if (extentsNeedUpdate) {
+                RecalculateExtents();
+            }
+            return elevationExtents;
+        }
+    }
+    private Vector2 elevationExtents;
+    private bool extentsNeedUpdate;
 
     // Label
     public RectTransform uiRect;
@@ -22,10 +26,32 @@ public class Point
     private Point[] neighbors;
     private Edge[] edges;
 
+    public void UpdateExtents() {
+        extentsNeedUpdate = true;
+    }
+
+    private void RecalculateExtents() {
+        int maxElevation = int.MinValue;
+        int minElevation = int.MaxValue;
+        for (int i = 0; i < 6; i++) {
+            TriCell.CellCorner corner = GetCornerOfCell((CellDirection)i);
+            if (corner != null) {
+                int elevation = corner.Elevation;
+                if (elevation < minElevation) {
+                    minElevation = elevation;
+                }
+                if (elevation > maxElevation) {
+                    maxElevation = elevation;
+                }
+            }
+        }
+        elevationExtents = new Vector2(minElevation, maxElevation);
+        extentsNeedUpdate = false;
+    }
+
     public Point(PointType type, int x, int z) {
         this.coordinates = VertexCoordinates.FromOffsetCoordinates(x, z);
         this.position = VertexCoordinates.GetPos2DFromVertex(coordinates);
-        this.type = type;
         neighbors = new Point[6];
         floorCells = new TriCell[6];
         ceilingCells = new TriCell[6];
@@ -35,7 +61,6 @@ public class Point
     public Point(PointType type, VertexCoordinates coordinates) {
         this.coordinates = coordinates;
         this.position = VertexCoordinates.GetPos2DFromVertex(coordinates);
-        this.type = type;
         neighbors = new Point[6];
         floorCells = new TriCell[6];
         ceilingCells = new TriCell[6];
@@ -46,12 +71,6 @@ public class Point
         }
         if (type != PointType.BottomEdge) {
             SetCell(CellDirection.S, new TriCell(this, coordinates.GetRelativeCellCoordinates(CellDirection.S)));
-        }
-    }
-
-    public void Refresh() {
-        if (chunk) {
-            chunk.Refresh();
         }
     }
 
@@ -79,9 +98,21 @@ public class Point
     }
 
     public void SetCell(CellDirection direction, TriCell cell) {
-        floorCells[(int)direction] = cell;
-        // TODO set cells for other points? idk I dont think so bc it's covered in CreateCell
-        // neighbors[(int)direction].edges[(int)direction.Opposite()] = edge;
+        if (cell != null) {
+            floorCells[(int)direction] = cell;
+            cell.SetPoint(direction.Opposite(), this);
+            // TODO set cells for other points? idk I dont think so bc it's covered in CreateCell
+            // neighbors[(int)direction].edges[(int)direction.Opposite()] = edge;
+        }
+    }
+
+    public TriCell.CellCorner GetCornerOfCell(CellDirection direction) {
+        TriCell cell = GetCell(direction);
+        if (cell != null) {
+            return cell.GetCorner(direction.Opposite());
+        } else {
+            return null;
+        }
     }
     #endregion
 }

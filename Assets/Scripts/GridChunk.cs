@@ -1,21 +1,22 @@
-﻿using System.Collections;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class GridChunk : MonoBehaviour
 {
-	Point[] points;
+	// In the future, this may need to become an array. 
+	// For now, we never access cells directly, and each chunk may have a different number of cells in it, so we're gonna use a list.
+	List<GridCell> cells;
 
 	GridMesh hexMesh;
 
 	void Awake() {
 		hexMesh = GetComponentInChildren<GridMesh>();
-
-		points = new Point[GridMetrics.chunkSizeX * GridMetrics.chunkSizeZ];
+		cells = new List<GridCell>();
 	}
 
     private void LateUpdate() {
-		hexMesh.Triangulate(points);
+		hexMesh.Triangulate(cells);
 		enabled = false;
     }
 
@@ -23,8 +24,14 @@ public class GridChunk : MonoBehaviour
 		enabled = true;
 	}
 
-	public void AddPoint(int index, Point point) {
-		points[index] = point;
-		point.chunk = this;
+	public void AddCell(int index, GridCell cell) {
+		throw new NotImplementedException();
+		cells[index] = cell;
+		cell.chunk = this;
+	}
+
+	public void AddCell(GridCell cell) {
+		cells.Add(cell);
+		cell.chunk = this;
 	}
 }

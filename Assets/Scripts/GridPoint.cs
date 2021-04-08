@@ -9,11 +9,31 @@ using UnityEngine;
 public class GridPoint
 {
     private List<Point> points;
+    public PointType type {
+        get;
+        private set;
+    }
+
+    public GridPoint(Point point) {
+        points = new List<Point>();
+        points.Add(point);
+    }
 
     public Point GetPoint(int index) {
         if (index > points.Count - 1) {
             throw new ArgumentOutOfRangeException();
         }
         return points[index];
+    }
+
+    public Point GetPointAtY(float y) {
+        foreach(Point point in points) {
+            float marginOfError = 0.1f; // To account for float precision
+            Vector2 extents = point.ElevationExtents;
+            if (extents.x * GridMetrics.elevationStep - marginOfError <= y && y <= extents.y * GridMetrics.elevationStep + marginOfError) {
+                return point;
+            }
+        }
+        throw new ArgumentException();
     }
 }

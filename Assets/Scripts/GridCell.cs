@@ -9,12 +9,24 @@ using UnityEngine;
 /// </summary>
 public class GridCell
 {
+    public GridChunk chunk;
+    public int count {
+        get {
+            return cells.Count;
+        }
+    }
+
     // A grid space will always have an odd number of cells, since no space can end in a ceiling
     private List<TriCell> cells;
 
     public GridCell(TriCell cell) {
         cells = new List<TriCell>();
         cells.Add(cell);
+        cell.gridCell = this;
+    }
+
+    public TriCell GetCell(int index) {
+        return cells[index];
     }
 
     public TriCell GetFloor(int index) {
