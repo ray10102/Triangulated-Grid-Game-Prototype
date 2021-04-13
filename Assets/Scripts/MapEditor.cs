@@ -302,7 +302,7 @@ public class MapEditor : MonoBehaviour
 						HandleTriHover(hexGrid.GetCellFromPosition(hit.point, hit.normal));
 						break;
 					case SelectedComponent.Hex:
-						HandleHexHover(hexGrid.GetPointFromPosition(hit.point), hit.normal);
+						HandleHexHover(hit);
 						break;
 					case SelectedComponent.Point:
 						HandlePointHover(hexGrid.GetPointFromPosition(hit.point), hit.normal);
@@ -336,7 +336,7 @@ public class MapEditor : MonoBehaviour
 			} else if (!isMultiSelectingPoints && distFromPoint < CORNER_SELECT_RADIUS) {
 				HandleCornerHover(hexGrid.GetCornerFromPosition(hit.point, hit.normal));
 			} else if (distFromPoint < HEX_SELECT_RADIUS) {
-				HandleHexHover(point, hit.normal);
+				HandleHexHover(hit);
 			} else {
 				TriCell cell = hexGrid.GetCellFromPosition(hit.point, hit.normal);
 				if (Vector2.Distance(cell.centerXZ, hitXZ) < CELL_SELECT_RADIUS) {
@@ -402,7 +402,9 @@ public class MapEditor : MonoBehaviour
 		hoverLineRenderer.SetPositions(pointArray);
 	}
 
-	private void HandleHexHover(Point point, Vector3 normal) {
+	private void HandleHexHover(RaycastHit hit) {
+		Point point = hexGrid.GetHexFromPosition(hit.point);
+		Vector3 normal = hit.normal;
 		hoverLineRenderer.loop = true;
 		hoverLineRenderer.positionCount = 12;
 		pointArray[0] = point.GetCell(CellDirection.N, normal).corners[1].Position;

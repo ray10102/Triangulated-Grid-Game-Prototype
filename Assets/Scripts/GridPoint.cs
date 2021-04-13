@@ -9,12 +9,6 @@ using UnityEngine;
 public class GridPoint
 {
     public VertexCoordinates coordinates;
-
-    public PointType type {
-        get;
-        private set;
-    }
-
     private List<Point> points;
 
     public GridPoint(Point point, VertexCoordinates coordinates) {

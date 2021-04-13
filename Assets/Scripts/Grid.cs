@@ -53,6 +53,27 @@ public class Grid : MonoBehaviour
 	}
 
 	#region Getters
+	
+	// TODO: refactor this to check cell neighbors rather than just map edges.
+	public Point GetHexFromPosition(Vector3 position) {
+		GridPoint gridPoint = GetGridPointFromPosition(position);
+		VertexCoordinates coord = gridPoint.coordinates;
+		if (coord.ToOffsetCoordinates().y == pointCountZ - 1) {
+			gridPoint = GetGridPointFromPosition(position + new Vector3(0, 0, -GridMetrics.triHeight));
+		}
+		if (coord.ToOffsetCoordinates().y == 0) {
+			gridPoint = GetGridPointFromPosition(position + new Vector3(0, 0, GridMetrics.triHeight));
+		}
+		if (coord.ToOffsetCoordinates().x == 0) {
+			gridPoint = points[GetPointIndexFromCoordinate(coord.GetRight())];
+			coord = gridPoint.coordinates;
+        }
+		if (coord.ToOffsetCoordinates().x == pointCountX - 1) {
+			gridPoint = points[GetPointIndexFromCoordinate(coord.GetLeft())];
+		}
+		return gridPoint.GetPointAtY(position.y);
+	}
+
 	public Point GetPointFromPosition(Vector3 position) {
 		GridPoint gridPoint = GetGridPointFromPosition(position);
 		return gridPoint.GetPointAtY(position.y);

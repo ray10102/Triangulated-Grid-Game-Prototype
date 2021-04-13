@@ -35,10 +35,18 @@ public struct VertexCoordinates
 		this.z = z;
 	}
 
+	public Vector2 ToOffsetCoordinates() {
+		return VertexCoordinates.ToOffsetCoordinates(this);
+    }
+
 	#region Static Coordinate System Converters
 	public static VertexCoordinates FromOffsetCoordinates(int x, int z) {
 		return new VertexCoordinates(x - z / 2, z);
 	}
+
+	public static Vector2 ToOffsetCoordinates(VertexCoordinates vert) {
+		return new Vector2(vert.X + vert.Z / 2, vert.Z);
+    }
 
 	public static VertexCoordinates FromPosition(Vector3 position) {
 		float x = position.x / (GridMetrics.innerRadius * 2f);
@@ -69,8 +77,8 @@ public struct VertexCoordinates
 
 	public static Vector2 GetPos2DFromVertex(VertexCoordinates coordinates) {
 		Vector2 position;
-		position.x = (coordinates.X + coordinates.Z * 0.5f) * (GridMetrics.innerRadius * 2f);
-		position.y = coordinates.Z * (GridMetrics.outerRadius * 1.5f);
+		position.x = (coordinates.X + coordinates.Z * 0.5f) * GridMetrics.edgeLength;
+		position.y = coordinates.Z * GridMetrics.triHeight;
 		return position;
 	}
 	#endregion
