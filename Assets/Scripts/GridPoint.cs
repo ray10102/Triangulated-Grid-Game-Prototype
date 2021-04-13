@@ -39,6 +39,6 @@ public class GridPoint
                 return point;
             }
         }
-        throw new ArgumentException();
+        throw new ArgumentException("Couldn't get point for " + coordinates.ToString() + " at y " + y.ToString());
     }
 }

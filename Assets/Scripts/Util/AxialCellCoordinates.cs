@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 public struct AxialCellCoordinates
@@ -23,13 +24,17 @@ public struct AxialCellCoordinates
 		}
 	}
 
+	public List<AxialCellCoordinates> coordinateContainer;
+
 	public AxialCellCoordinates(int x, int y, int z) {
 		X = x;
 		Y = y;
 		Z = z;
+		coordinateContainer = new List<AxialCellCoordinates>();
 	}
 
 	public AxialCellCoordinates(VertexCoordinates vert, CellDirection dir) {
+		coordinateContainer = new List<AxialCellCoordinates>();
 		switch (dir) {
 			case CellDirection.N:
 				X = vert.X - 1;
@@ -66,6 +71,30 @@ public struct AxialCellCoordinates
 		}
 	}
 
+    #region Coordinate selection
+	public List<AxialCellCoordinates> GetCoordinatesInDirection(int direction, int distance) {
+		coordinateContainer.Clear();
+		AxialCellCoordinates last = this;
+		if ((direction & 1) == 0) { // In cell direction
+			AxialCellCoordinates next;
+			for (int i = 0; i < distance; i++) {
+				next = last.StepToward(((GridDirection)direction).ToCellDirection());
+				coordinateContainer.Add(next);
+				last = next;
+			}
+		} else { // In edge direction
+			AxialCellCoordinates next;
+			for (int i = 0; i < distance; i++) {
+				next = last.StepToward(last.GetCellDirectionForEdgeDirection(((GridDirection)direction).ToEdgeDirection()));
+				coordinateContainer.Add(next);
+				last = next;
+			}
+		}
+		return coordinateContainer;
+	}
+	#endregion
+
+	#region Distance
 	public static int ManhattanDistance(AxialCellCoordinates first, AxialCellCoordinates second) {
 		return first.ManhattanDistanceTo(second);
 	}
@@ -105,6 +134,84 @@ public struct AxialCellCoordinates
 	public ContinuousCellCoordinates ToCCS() {
 		throw new NotImplementedException();
 	}
+	#endregion
+
+	#region Coordinate arithmetic
+	public AxialCellCoordinates Plus(Vector3 amt) {
+		return new AxialCellCoordinates(X + (int)amt.x, Y + (int)amt.y, Z + (int)amt.z);
+	}
+
+	public AxialCellCoordinates StepToward(CellDirection dir) {
+		// Cross edge
+		if ((this.IsPositive && (dir == CellDirection.NE || dir == CellDirection.NW || dir == CellDirection.S)) ||
+			(!this.IsPositive && (dir == CellDirection.SE || dir == CellDirection.SW || dir == CellDirection.N))) {
+			return this.Plus(AcrossEdge(dir));
+        } else {
+			return this.Plus(AcrossCorner(dir));
+        }
+	}
+
+	/// <summary>
+	/// Translates an edge direction into the cell direction of the next cell based
+	/// on whether this one is a positive or negative cell.
+	/// </summary>
+	private CellDirection GetCellDirectionForEdgeDirection(EdgeDirection dir) {
+		switch (dir) {
+			case EdgeDirection.E:
+				return IsPositive ? CellDirection.NE : CellDirection.SE;
+			case EdgeDirection.W:
+				return IsPositive ? CellDirection.NW : CellDirection.SW;
+			case EdgeDirection.SE:
+				return IsPositive ? CellDirection.S : CellDirection.SE;
+			case EdgeDirection.NW:
+				return IsPositive ? CellDirection.NW : CellDirection.N;
+			case EdgeDirection.SW:
+				return IsPositive ? CellDirection.S : CellDirection.SW;
+			case EdgeDirection.NE:
+				return IsPositive ? CellDirection.NE : CellDirection.N;
+			default:
+				throw new ArgumentOutOfRangeException();
+		}
+	}
+
+	private static Vector3 AcrossCorner(CellDirection dir) {
+		switch (dir) {
+			case CellDirection.N:
+				return new Vector3(-1, -1, 1);
+			case CellDirection.S:
+				return new Vector3(1, 1, -1);
+			case CellDirection.SE:
+				return new Vector3(1, -1, -1);
+			case CellDirection.NW:
+				return new Vector3(-1, 1, 1);
+			case CellDirection.SW:
+				return new Vector3(-1, 1, -1);
+			case CellDirection.NE:
+				return new Vector3(1, -1, 1);
+			default:
+				throw new ArgumentOutOfRangeException();
+		}
+    }
+
+	public static Vector3 AcrossEdge(CellDirection dir) {
+		switch (dir) {
+			case CellDirection.N:
+				return new Vector3(0, 0, 1);
+			case CellDirection.S:
+				return new Vector3(0, 0, -1);
+			case CellDirection.SE:
+				return new Vector3(1, 0, 0);
+			case CellDirection.NW:
+				return new Vector3(-1, 0, 0);
+			case CellDirection.SW:
+				return new Vector3(0, 1, 0);
+			case CellDirection.NE:
+				return new Vector3(0, -1, 0);
+			default:
+				throw new ArgumentOutOfRangeException();
+        }
+    }
+	#endregion
 
 	#region Static Coordinate System Converters
 	public static AxialCellCoordinates FromOffsetCoordinates(int x, int z) {
@@ -174,7 +281,6 @@ public struct AxialCellCoordinates
 	#endregion
 
 	#region String Methods
-
 	public override string ToString() {
 		return "(" + X.ToString() + ", " + Y.ToString() + ", " + Z.ToString() + ")";
 	}

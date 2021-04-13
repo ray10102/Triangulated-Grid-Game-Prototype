@@ -29,4 +29,15 @@ public static class Util
         float y = m1 * x + b1;
         return new Vector2(x, y);
     }
+
+    public static TriangleType GetTriTypeFromNormal(Vector3 normal) {
+        float angle = Vector3.Angle(normal, Vector3.up);
+        if (Mathf.Approximately(angle, 90f)) {
+            return TriangleType.Edge;
+        }
+        if (angle < 90f) {
+            return TriangleType.Floor;
+        }
+        return TriangleType.Ceiling;
+    }
 }

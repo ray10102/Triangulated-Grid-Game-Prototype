@@ -137,7 +137,7 @@ public class MapEditor : MonoBehaviour
     private void HandleEdit(RaycastHit hit) {
 		switch (selectMode) {
 			case SelectedComponent.Tri:
-				HandleTriEdit(hexGrid.GetCellFromPosition(hit.point));
+				HandleTriEdit(hexGrid.GetCellFromPosition(hit.point, hit.normal));
 				break;
 			case SelectedComponent.Hex:
 				HandleHexEdit(hexGrid.GetPointFromPosition(hit.point));
@@ -149,7 +149,7 @@ public class MapEditor : MonoBehaviour
 				HandleEdgeEdit(hit);
 				break;
 			case SelectedComponent.Corner:
-				HandleCornerEdit(hexGrid.GetCornerFromPosition(hit.point));
+				HandleCornerEdit(hexGrid.GetCornerFromPosition(hit.point, hit.normal));
 				break;
 			case SelectedComponent.Multi:
 				HandleMultiEdit(hit);
@@ -170,11 +170,11 @@ public class MapEditor : MonoBehaviour
 			if (isMultiSelectingPoints && distFromPoint < POINT_SELECT_RADIUS) {
 				HandlePointEdit(point);
 			} else if (!isMultiSelectingPoints && distFromPoint < CORNER_SELECT_RADIUS) {
-				HandleCornerEdit(hexGrid.GetCornerFromPosition(hit.point));
+				HandleCornerEdit(hexGrid.GetCornerFromPosition(hit.point, hit.normal));
 			} else if (distFromPoint < HEX_SELECT_RADIUS) {
 				HandleHexEdit(point);
 			} else {
-				TriCell cell = hexGrid.GetCellFromPosition(hit.point);
+				TriCell cell = hexGrid.GetCellFromPosition(hit.point, hit.normal);
 				if (Vector2.Distance(cell.centerXZ, hitXZ) < CELL_SELECT_RADIUS) {
 					HandleTriEdit(cell);
 				} else {
@@ -237,10 +237,10 @@ public class MapEditor : MonoBehaviour
 	private void HandleLineSelect(RaycastHit hit) {
 		switch (selectMode) {
 			case SelectedComponent.Tri:
-				HandleTriLineSelect(hit.point);
+				HandleTriLineSelect(hit.point, hit.normal);
 				break;
 			case SelectedComponent.Hex:
-				HandleHexLineSelect(hit.point);
+				HandleHexLineSelect(hit.point, hit.normal);
 				break;
 			case SelectedComponent.Point:
 				break;
@@ -255,19 +255,26 @@ public class MapEditor : MonoBehaviour
 		}
 	}
 
-	private void HandleHexLineSelect(Vector3 dragEnd) {
+	private void HandleHexLineSelect(Vector3 dragEnd, Vector3 normal) {
 
     }
 
-	private void HandleTriLineSelect(Vector3 dragEnd) {
+	private void HandleTriLineSelect(Vector3 dragEnd, Vector3 normal) {
 		Vector2 dragDirection = Util.XZ(clickStartPos) - Util.XZ(dragEnd);
 		float angle = Vector2.SignedAngle(Vector2.up, dragDirection);
 		// Range [-5, 5] 0 is down (+z), negative left, positive right
-		int direction = (int) (angle / 30f);
-		TriCell startCell = hexGrid.GetCellFromPosition(clickStartPos);
-		TriCell endCell = hexGrid.GetCellFromPosition(dragEnd);
-		int distance = startCell.RadialDistanceTo(endCell);
-		Debug.Log(distance);
+		int direction = (Mathf.FloorToInt((angle + 15f) / 30f)) + 6;
+		// TODO: This is not 100% correct and will need fixing in the future: both cell selections use the drag end normal.
+		TriCell startCell = hexGrid.GetCellFromPosition(clickStartPos, normal);
+		TriCell endCell = hexGrid.GetCellFromPosition(dragEnd, normal);
+		Debug.Log(direction);
+		if ((direction & 1) == 0) { // Even direction cross points
+			int distance = startCell.RadialDistanceTo(endCell);
+
+		} else { // Odd directions cross edges only
+			int distance = startCell.ManhattanDistanceTo(endCell);
+
+        }
 	}
 
 	#endregion
@@ -292,19 +299,19 @@ public class MapEditor : MonoBehaviour
 			} else {
 				switch (selectMode) {
 					case SelectedComponent.Tri:
-						HandleTriHover(hexGrid.GetCellFromPosition(hit.point));
+						HandleTriHover(hexGrid.GetCellFromPosition(hit.point, hit.normal));
 						break;
 					case SelectedComponent.Hex:
-						HandleHexHover(hexGrid.GetPointFromPosition(hit.point));
+						HandleHexHover(hexGrid.GetPointFromPosition(hit.point), hit.normal);
 						break;
 					case SelectedComponent.Point:
-						HandlePointHover(hexGrid.GetPointFromPosition(hit.point));
+						HandlePointHover(hexGrid.GetPointFromPosition(hit.point), hit.normal);
 						break;
 					case SelectedComponent.Edge:
 						HandleEdgeHover(hit);
 						break;
 					case SelectedComponent.Corner:
-						HandleCornerHover(hexGrid.GetCornerFromPosition(hit.point));
+						HandleCornerHover(hexGrid.GetCornerFromPosition(hit.point, hit.normal));
 						break;
 					case SelectedComponent.Multi:
 						HandleMultiHover(hit);
@@ -325,13 +332,13 @@ public class MapEditor : MonoBehaviour
 			float distFromPoint = Vector2.Distance(
 				point.position, hitXZ);
 			if (isMultiSelectingPoints && distFromPoint < POINT_SELECT_RADIUS) {
-				HandlePointHover(point);
+				HandlePointHover(point, hit.normal);
 			} else if (!isMultiSelectingPoints && distFromPoint < CORNER_SELECT_RADIUS) {
-				HandleCornerHover(hexGrid.GetCornerFromPosition(hit.point));
+				HandleCornerHover(hexGrid.GetCornerFromPosition(hit.point, hit.normal));
 			} else if (distFromPoint < HEX_SELECT_RADIUS) {
-				HandleHexHover(point);
+				HandleHexHover(point, hit.normal);
 			} else {
-				TriCell cell = hexGrid.GetCellFromPosition(hit.point);
+				TriCell cell = hexGrid.GetCellFromPosition(hit.point, hit.normal);
 				if (Vector2.Distance(cell.centerXZ, hitXZ) < CELL_SELECT_RADIUS) {
 					HandleTriHover(cell);
 				} else {
@@ -351,6 +358,9 @@ public class MapEditor : MonoBehaviour
 	}
 
 	private void HandleTriHover(TriCell cell) {
+		if (cell == null) {
+			Debug.LogError("null cell");
+        }
 		hoverLineRenderer.loop = true;
 		hoverLineRenderer.positionCount = 3;
 		for (int i = 0; i < 3; i++) {
@@ -359,19 +369,9 @@ public class MapEditor : MonoBehaviour
 		hoverLineRenderer.SetPositions(pointArray);
     }
 
-	private void HandlePointHover(Point point) {
-		int minElevation = int.MaxValue;
-		int maxElevation = int.MinValue;
-		for(int i = 0; i < 6; i++) {
-			CellDirection direction = (CellDirection)i;
-			int elevation = point.GetCell(direction).corners[direction.GetCenterVertIndexForCell()].Elevation;
-			if (elevation < minElevation) {
-				minElevation = elevation;
-            }
-			if (elevation > maxElevation) {
-				maxElevation = elevation;
-            }
-        }
+	private void HandlePointHover(Point point, Vector3 normal) {
+		int minElevation = (int)point.ElevationExtents.x;
+		int maxElevation = (int)point.ElevationExtents.y;
 		if (minElevation != maxElevation) { // draw vertical line
 			hoverLineRenderer.loop = false;
 			hoverLineRenderer.positionCount = 2;
@@ -382,18 +382,18 @@ public class MapEditor : MonoBehaviour
 			hoverLineRenderer.loop = false;
 			hoverLineRenderer.positionCount = 12;
 			Vector3 center = Util.ToVec3(point.position) + Util.ElevationToVec3(minElevation);
-			pointArray[0] = point.GetCell(CellDirection.N).corners[1].Position;
-			pointArray[1] = point.GetCell(CellDirection.N).corners[2].Position;
-			pointArray[2] = point.GetCell(CellDirection.NE).corners[0].Position;
-			pointArray[3] = point.GetCell(CellDirection.NE).corners[1].Position;
-			pointArray[4] = point.GetCell(CellDirection.SE).corners[2].Position;
-			pointArray[5] = point.GetCell(CellDirection.SE).corners[0].Position;
-			pointArray[6] = point.GetCell(CellDirection.S).corners[1].Position;
-			pointArray[7] = point.GetCell(CellDirection.S).corners[2].Position;
-			pointArray[8] = point.GetCell(CellDirection.SW).corners[0].Position;
-			pointArray[9] = point.GetCell(CellDirection.SW).corners[1].Position;
-			pointArray[10] = point.GetCell(CellDirection.NW).corners[2].Position;
-			pointArray[11] = point.GetCell(CellDirection.NW).corners[0].Position;
+			pointArray[0] = point.GetCell(CellDirection.N, normal).corners[1].Position;
+			pointArray[1] = point.GetCell(CellDirection.N, normal).corners[2].Position;
+			pointArray[2] = point.GetCell(CellDirection.NE, normal).corners[0].Position;
+			pointArray[3] = point.GetCell(CellDirection.NE, normal).corners[1].Position;
+			pointArray[4] = point.GetCell(CellDirection.SE, normal).corners[2].Position;
+			pointArray[5] = point.GetCell(CellDirection.SE, normal).corners[0].Position;
+			pointArray[6] = point.GetCell(CellDirection.S, normal).corners[1].Position;
+			pointArray[7] = point.GetCell(CellDirection.S, normal).corners[2].Position;
+			pointArray[8] = point.GetCell(CellDirection.SW, normal).corners[0].Position;
+			pointArray[9] = point.GetCell(CellDirection.SW, normal).corners[1].Position;
+			pointArray[10] = point.GetCell(CellDirection.NW, normal).corners[2].Position;
+			pointArray[11] = point.GetCell(CellDirection.NW, normal).corners[0].Position;
 			for (int i = 0; i < 12; i++) {
 				Vector3 diff = pointArray[i] - center;
 				pointArray[i] = center + diff * POINT_RADIUS_MULTIPLIER;
@@ -402,21 +402,21 @@ public class MapEditor : MonoBehaviour
 		hoverLineRenderer.SetPositions(pointArray);
 	}
 
-	private void HandleHexHover(Point point) {
+	private void HandleHexHover(Point point, Vector3 normal) {
 		hoverLineRenderer.loop = true;
 		hoverLineRenderer.positionCount = 12;
-		pointArray[0] = point.GetCell(CellDirection.N).corners[1].Position;
-		pointArray[1] = point.GetCell(CellDirection.N).corners[2].Position;
-		pointArray[2] = point.GetCell(CellDirection.NE).corners[0].Position;
-		pointArray[3] = point.GetCell(CellDirection.NE).corners[1].Position;
-		pointArray[4] = point.GetCell(CellDirection.SE).corners[2].Position;
-		pointArray[5] = point.GetCell(CellDirection.SE).corners[0].Position;
-		pointArray[6] = point.GetCell(CellDirection.S).corners[1].Position;
-		pointArray[7] = point.GetCell(CellDirection.S).corners[2].Position;
-		pointArray[8] = point.GetCell(CellDirection.SW).corners[0].Position;
-		pointArray[9] = point.GetCell(CellDirection.SW).corners[1].Position;
-		pointArray[10] = point.GetCell(CellDirection.NW).corners[2].Position;
-		pointArray[11] = point.GetCell(CellDirection.NW).corners[0].Position;
+		pointArray[0] = point.GetCell(CellDirection.N, normal).corners[1].Position;
+		pointArray[1] = point.GetCell(CellDirection.N, normal).corners[2].Position;
+		pointArray[2] = point.GetCell(CellDirection.NE, normal).corners[0].Position;
+		pointArray[3] = point.GetCell(CellDirection.NE, normal).corners[1].Position;
+		pointArray[4] = point.GetCell(CellDirection.SE, normal).corners[2].Position;
+		pointArray[5] = point.GetCell(CellDirection.SE, normal).corners[0].Position;
+		pointArray[6] = point.GetCell(CellDirection.S, normal).corners[1].Position;
+		pointArray[7] = point.GetCell(CellDirection.S, normal).corners[2].Position;
+		pointArray[8] = point.GetCell(CellDirection.SW, normal).corners[0].Position;
+		pointArray[9] = point.GetCell(CellDirection.SW, normal).corners[1].Position;
+		pointArray[10] = point.GetCell(CellDirection.NW, normal).corners[2].Position;
+		pointArray[11] = point.GetCell(CellDirection.NW, normal).corners[0].Position;
 		hoverLineRenderer.SetPositions(pointArray);
 	}
 

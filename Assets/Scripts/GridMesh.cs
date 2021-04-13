@@ -229,3 +229,8 @@ public class GridMesh : MonoBehaviour
 		colors.Add(color);
 	}
 }
+
+public enum TriangleType
+{
+	Floor, Ceiling, Edge
+}

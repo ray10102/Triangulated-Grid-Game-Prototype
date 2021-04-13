@@ -1,4 +1,6 @@
 ﻿using UnityEngine;
+using System;
+
 /// <summary>
 ///  A Point represents a vertex of open space, that is the space betweena floor and the ceiling, or the floor and the sky. 
 ///  Points represent the junction between up to six floor cells and six ceiling cells.
@@ -28,8 +30,7 @@ public class Point
 
     // Label
     public RectTransform uiRect;
-    public TriCell[] floorCells;
-    public TriCell[] ceilingCells;
+    public TriCell[] cells;
     private Point[] neighbors;
     private Edge[] edges;
 
@@ -40,8 +41,8 @@ public class Point
     private void RecalculateExtents() {
         int maxElevation = int.MinValue;
         int minElevation = int.MaxValue;
-        for (int i = 0; i < 6; i++) {
-            TriCell.CellCorner corner = GetCornerOfCell((CellDirection)i);
+        for (int i = 0; i < cells.Length; i++) {
+            TriCell.CellCorner corner = GetCornerOfCell(i);
             if (corner != null) {
                 int elevation = corner.Elevation;
                 if (elevation < minElevation) {
@@ -56,27 +57,13 @@ public class Point
         extentsNeedUpdate = false;
     }
 
-    public Point(PointType type, int x, int z) {
-        this.position = VertexCoordinates.GetPos2DFromVertex(VertexCoordinates.FromOffsetCoordinates(x, z));
-        neighbors = new Point[6];
-        floorCells = new TriCell[6];
-        ceilingCells = new TriCell[6];
-        edges = new Edge[6];
-    }
+    public Point(PointType type, int x, int z) : this(type, VertexCoordinates.FromOffsetCoordinates(x, z)) { }
 
     public Point(PointType type, VertexCoordinates coordinates) {
         this.position = VertexCoordinates.GetPos2DFromVertex(coordinates);
         neighbors = new Point[6];
-        floorCells = new TriCell[6];
-        ceilingCells = new TriCell[6];
+        cells = new TriCell[12];
         edges = new Edge[6];
-        // TODO this does not belong to the point, should move elsewhere
-        if (type != PointType.TopEdge) {
-            SetCell(CellDirection.N, new TriCell(this, coordinates.GetRelativeCellCoordinates(CellDirection.N)));
-        }
-        if (type != PointType.BottomEdge) {
-            SetCell(CellDirection.S, new TriCell(this, coordinates.GetRelativeCellCoordinates(CellDirection.S)));
-        }
     }
 
     #region Neighbors Cells and Edges
@@ -95,31 +82,46 @@ public class Point
 
     public void SetEdge(EdgeDirection direction, Edge edge) {
         edges[(int)direction] = edge;
-        neighbors[(int)direction].edges[(int)direction.Opposite()] = edge;
+        GetNeighbor(direction).edges[(int)direction.Opposite()] = edge; // bypass SetEdge to avoid infinite loop
     }
 
-    public TriCell GetCell(CellDirection direction) {
-        return floorCells[(int)direction];
+    public TriCell GetCell(CellDirection direction, Vector3 normal) {
+        TriangleType type = Util.GetTriTypeFromNormal(normal);
+        return GetCell(direction, type);
     }
 
-    public void SetCell(CellDirection direction, TriCell cell) {
+    public TriCell GetCell(CellDirection direction, TriangleType type) {
+        if (type == TriangleType.Edge) {
+            throw new NotImplementedException("GetCell currently not handling edge types");
+        }
+        return cells[GetCellIndex(direction, type)];
+    }
+
+    public void SetCell(CellDirection direction, TriCell cell, TriangleType type) {
         if (cell != null) {
-            floorCells[(int)direction] = cell;
-            cell.SetPoint(direction.Opposite(), this);
-            // TODO set cells for other points? idk I dont think so bc it's covered in CreateCell
-            // neighbors[(int)direction].edges[(int)direction.Opposite()] = edge;
+            cells[GetCellIndex(direction, type)] = cell;
+        } else {
+            throw new ArgumentException("null cell: " + gridPoint.coordinates.ToString() + ", " + direction.ToString());
         }
     }
 
-    public TriCell.CellCorner GetCornerOfCell(CellDirection direction) {
-        TriCell cell = GetCell(direction);
+    public TriCell.CellCorner GetCornerOfCell(int cellIndex) {
+        TriCell cell = cells[cellIndex];
         if (cell != null) {
-            return cell.GetCorner(direction.Opposite());
+            return cell.GetCorner(GetDirectionFromIndex(cellIndex).Opposite());
         } else {
             return null;
         }
     }
     #endregion
+
+    private int GetCellIndex(CellDirection direction, TriangleType type) {
+        return (int)direction + (type == TriangleType.Ceiling ? 6 : 0);
+    }
+
+    private CellDirection GetDirectionFromIndex(int cellIndex) {
+        return (CellDirection)(cellIndex - (cellIndex > 5 ? 6 : 0));
+    }
 }
 
 /// <summary>

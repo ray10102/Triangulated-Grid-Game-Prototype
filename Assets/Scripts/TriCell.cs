@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using System.Collections.Generic;
 using System;
 
 /// <summary>
@@ -47,16 +48,32 @@ public class TriCell
 		}
 	}
 	private TriType type;
-
+	public Vector3 Normal {
+		get {
+			if (dirtyElevation) {
+				RecalculateElevationValues();
+			}
+			return normal;
+		}
+	}
+	private Vector3 normal;
 	private bool dirtyElevation;
 
+	/// <summary>
+	/// The points that form this cell, i.e., the points of this cell's corners.
+	/// </summary>
 	private Point[] points;
-	private TriCell[] neighbors;
+	/// <summary>
+	/// The edges that form this cell, i.e., the edges between this cell's corners.
+	/// </summary>
 	private Edge[] edges;
+	private TriCell[] neighbors;
+
+	private static List<TriCell> triCellListTemp;
 
 	public TriCell(Point point, AxialCellCoordinates coordinates) {
         points = new Point[3];
-		neighbors = new TriCell[3];
+		neighbors = new TriCell[12];
 		edges = new Edge[3];
 		corners = new CellCorner[3];
 		for (int i = 0; i < 3; i++) {
@@ -149,34 +166,58 @@ public class TriCell
 		}*/
     }
 
-	// Untested
-	public TriCell GetNeighbor(CellDirection direction) {
-		if (ValidateCellDirection(direction)) {
-			return GetNeighborHelper(direction);
-		} else {
-			throw new ArgumentException();
-		}
+	public TriCell GetNeighbor(GridDirection direction) {
+		return neighbors[(int)direction];
+    }
+
+	public void SetNeighbor(GridDirection direction, TriCell cell) {
+		neighbors[(int)direction] = cell;
     }
 
 	public TriCell[] GetNeighbors() {
-		// TODO: don't recalculate every time, do it when neighbors change.
-		if (IsPositive) {
-			neighbors[0] = GetNeighbor(CellDirection.S);
-			neighbors[1] = GetNeighbor(CellDirection.NW);
-			neighbors[2] = GetNeighbor(CellDirection.NE);
-		} else {
-			neighbors[0] = GetNeighbor(CellDirection.N);
-			neighbors[1] = GetNeighbor(CellDirection.SE);
-			neighbors[2] = GetNeighbor(CellDirection.SW);
-		}
 		return neighbors;
     }
 
-    public Point GetPoint(int index) {
+	// Retrieves a temporary list of the neighbors matching the specified degree. This list will be cleared and repopulated every time this is called, so it must be consumed immediately or copied.
+	public List<TriCell> GetNeighbors(params NeighborDegree[] degrees) {
+		if (triCellListTemp == null) {
+			triCellListTemp = new List<TriCell>();
+        }
+		triCellListTemp.Clear();
+		bool isPositive = IsPositive;
+		foreach(NeighborDegree degree in degrees) {
+			switch (degree) {
+				case NeighborDegree.Primary:
+					for (int i = 0; i < 3; i++) { // every fourth neighbor starting w 2 or 0
+                        triCellListTemp.Add(neighbors[(isPositive ? 2 : 0) + i * 4]);
+					}
+					break;
+				case NeighborDegree.Secondary:
+					for (int i = 0; i < 3; i++) { // every fourth neighbor starting w 2 or 0
+						triCellListTemp.Add(neighbors[(isPositive ? 0 : 2) + i * 4]);
+					}
+					break;
+				case NeighborDegree.Tertiary:
+					for (int i = 0; i < 6; i++) { // every other neighbor starting with 1
+						triCellListTemp.Add(neighbors[1 + i * 2]);
+					}
+					break;
+				default:
+					throw new ArgumentException();
+			}
+        }
+		return triCellListTemp;
+	}
+
+	public Point GetPoint(int index) {
+		if (points[index] == null) {
+			Debug.LogError(coordinates.ToStringOnSeparateLines() + ", " + index.ToString());
+        }
 		return points[index];
     }
 
 	public CellCorner GetCorner(CellDirection dir) {
+		TriangleType type = Util.GetTriTypeFromNormal(Normal);
 		if (ValidateCornerDirection(dir)) {
 			switch (dir) {
 				case CellDirection.N:
@@ -184,13 +225,13 @@ public class TriCell
 				case CellDirection.S:
 					return corners[0];
 				case CellDirection.SE:
-					return corners[1];
+					return type == TriangleType.Floor ? corners[1] : corners[2];
 				case CellDirection.NW:
-					return corners[1];
+					return type == TriangleType.Floor ? corners[1] : corners[2];
 				case CellDirection.SW:
-					return corners[2];
+					return type == TriangleType.Floor ? corners[2] : corners[1];
 				case CellDirection.NE:
-					return corners[2];
+					return type == TriangleType.Floor ? corners[2] : corners[1];
 				default:
 					throw new ArgumentOutOfRangeException();
             }
@@ -201,11 +242,17 @@ public class TriCell
 	#endregion
 
 	#region Setters
-
 	public void SetPoint(CellDirection dir, Point point) {
-		if (dir == CellDirection.NW || dir == CellDirection.SE) {
+		if (point == null) {
+			throw new ArgumentException("Trying to connect an invalid point to this cell: " + coordinates.ToString());
+        }
+		TriangleType type = Util.GetTriTypeFromNormal(Normal);
+		point.SetCell(dir.Opposite(), this, type);
+		if (type == TriangleType.Floor && (dir == CellDirection.NW || dir == CellDirection.SE) || 
+			type == TriangleType.Ceiling && (dir == CellDirection.NE || dir == CellDirection.SW)) {
 			points[1] = point;
-        } else if (dir == CellDirection.NE || dir == CellDirection.SW) {
+        } else if (type == TriangleType.Floor && (dir == CellDirection.NE || dir == CellDirection.SW) ||
+			type == TriangleType.Ceiling && (dir == CellDirection.NW || dir == CellDirection.SE)) {
 			points[2] = point;
         } else {
 			points[0] = point;
@@ -259,6 +306,14 @@ public class TriCell
     }
 
 	private void RecalculateElevationValues() {
+		// Normal 
+		Vector3 u = corners[1].Position - corners[0].Position;
+		Vector3 v = corners[2].Position - corners[1].Position;
+		normal = new Vector3(
+			u.y * v.z - u.z * v.y,
+			u.z * v.x - u.x * v.z,
+			u.x * v.y - u.y * v.x);
+
 		// Type
 		int minEl = Math.Min(Math.Min(corners[0].Elevation, corners[1].Elevation), corners[2].Elevation);
 		int maxEl = Math.Max(Math.Max(corners[0].Elevation, corners[1].Elevation), corners[2].Elevation);
@@ -284,27 +339,11 @@ public class TriCell
 		dirtyElevation = false;
 	}
 
-	private TriCell GetNeighborHelper(CellDirection direction) {
-		EdgeDirection edge1, edge2;
-		CellDirection cell1, cell2;
-		// TODO refactor this. It's not great but it works for now.
-		direction.GetRelativeCellDirections(out edge1, out edge2, out cell1, out cell2);
-		Point p1 = points[0].GetNeighbor(edge1);
-		Point p2 = points[0].GetNeighbor(edge2);
-		if (p1 != null) {
-			return p1.GetCell(cell1);
-		} else if (p2 != null) {
-			return p2.GetCell(cell2);
-		} else {
-			throw new ArgumentOutOfRangeException("No neighboring cell found");
-		}
-	}
-
 	private void Refresh() {
 		gridCell.chunk.Refresh();
 		// Update the neighboring points that render affected edges
-		if (!IsPositive) { // Positive cells handle cliff triangulation
-			TriCell[] neighbors = GetNeighbors();
+		if (!IsPositive) { // Positive cells generally handle cliff triangulation, so negative cells must refresh neighbors
+			List<TriCell> neighbors = GetNeighbors(NeighborDegree.Primary);
 			foreach (TriCell neighbor in neighbors) {
 				if (neighbor != null) {
 					neighbor.Refresh();
@@ -425,3 +464,5 @@ public class TriCell
 		}
 	}
 }
+
+public enum NeighborDegree { Primary, Secondary, Tertiary }

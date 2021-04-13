@@ -3,7 +3,7 @@ using System;
 
 public enum EdgeDirection
 {
-	NE, E, SE, SW, W, NW
+	NW, W, SW, SE, E, NE
 }
 
 /// <summary>
@@ -11,10 +11,15 @@ public enum EdgeDirection
 /// </summary>
 public enum CellDirection
 {
-	N, NE, SE, S, SW, NW
+	N, NW, SW, S, SE, NE
 }
 
 public enum EdgeOrientation { SWNE, EW, NWSE }
+
+public enum GridDirection
+{
+    N, NNW, NWW, W, SWW, SSW, S, SSE, SEE, E, NEE, NNE
+}
 
 public static class EdgeOrientationExtensions
 {
@@ -42,6 +47,10 @@ public static class EdgeDirectionExtensions
 	public static EdgeDirection Opposite(this EdgeDirection direction) {
 		return (int)direction < 3 ? (direction + 3) : (direction - 3);
 	}
+
+    public static GridDirection ToGridDirection(this EdgeDirection direction) {
+        return (GridDirection)((int)direction * 2 + 1);
+    }
 }
 
 public static class CellDirectionExtensions
@@ -113,5 +122,30 @@ public static class CellDirectionExtensions
             default:
                 throw new ArgumentOutOfRangeException();
         }
+    }
+
+    public static GridDirection ToGridDirection(this CellDirection direction) {
+        return (GridDirection) ((int)direction * 2);
+    }
+}
+
+public static class GridDirectionExtensions
+{
+    public static EdgeDirection ToEdgeDirection(this GridDirection direction) {
+        if (((int)direction & 1) == 0) { // even GridDirection, aka a CellDirection
+            throw new ArgumentException();
+        }
+        return (EdgeDirection)((int)direction / 2);
+    }
+
+    public static CellDirection ToCellDirection (this GridDirection direction) {
+        if (((int)direction & 1) == 1) { // even GridDirection, aka an EdgeDirection
+            throw new ArgumentException();
+        }
+        return (CellDirection)((int)direction / 2);
+    }
+
+    public static GridDirection Opposite(this GridDirection direction) {
+        return (int)direction < 6 ? (direction + 6) : (direction - 6);
     }
 }
